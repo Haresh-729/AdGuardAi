@@ -1,0 +1,189 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+Backend/node_modules/
+.env
+appsettings.js
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+FrontendOld/
+
+
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.so
+
+# Environment variables
+.env
+
+# Python virtual environment
+venv/
+ENV/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Byte-compiled files
+*.pyo
+*.pyc
+*.pyd
+
+# Uvicorn logs (if any)
+uvicorn*.log
+
+# pytest cache
+.pytest_cache/
+
+# Mypy cache
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# PyCharm project files
+*.iml
+
+# Jupyter notebooks (optional)
+.ipynb_checkpoints/
+
+# VS Code settings (optional if personal)
+*.code-workspace
+
+try.json
+AdminPanel/
+
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+Backend/node_modules/
+.env
+appsettings.js
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+FrontendOld/
+
+
+
+# Python cache files
+# __pycache__/
+*.py[cod]
+*.so
+
+# Environment variables
+.env
+
+# Python virtual environment
+venv/
+ENV/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Byte-compiled files
+*.pyo
+*.pyc
+*.pyd
+
+# Uvicorn logs (if any)
+uvicorn*.log
+
+# pytest cache
+.pytest_cache/
+
+# Mypy cache
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# PyCharm project files
+*.iml
+
+# Jupyter notebooks (optional)
+.ipynb_checkpoints/
+
+# VS Code settings (optional if personal)
+*.code-workspace
+
+try.json
+AdminPanel/
+
+vector_cache/
+vector_cache_large/
+prompts/
+vector_cache_minilm/
+demo/
+vector_cache_context/
+vector_cache_submit/
+local_storage/
+
+node_modules/
+
+.vite/
+frontend/
