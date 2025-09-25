@@ -1,0 +1,45 @@
+const authCallbackHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authorization Complete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Authorization Complete!</h2>
+        <p>Returning to your workflow...</p>
+    </div>
+    <script>
+        // Simply redirect back to the main app with the callback parameters
+        const currentUrl = new URL(window.location.href);
+        const builderUrl = new URL('/create', window.location.origin);
+        
+        // Copy all search parameters
+        currentUrl.searchParams.forEach((value, key) => {
+            builderUrl.searchParams.set(key, value);
+        });
+        
+        // Redirect to builder with OAuth parameters
+        window.location.href = builderUrl.toString();
+    </script>
+</body>
+</html>
+`;

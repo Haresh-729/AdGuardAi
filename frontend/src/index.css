@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Yatra+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Yatra+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Varela+Round&display=swap');
+@import 'tailwindcss';
+@plugin "tailwindcss-animate";
+
+@theme {
+  --font-roboto: 'Roboto', 'sans-serif';
+  --font-raleway: 'Raleway', 'sans-serif';
+  --font-poppins: 'Poppins', 'sans-serif';
+  --color-dark-blue: #1e2251;
+  --color-green: #13ec00;
+  --color-avocado: #5c8001;
+  --color-superiory-blue: #6ea4bf;
+  --color-ebony: #626c66;
+  --color-light-blue: #a7cecb;
+  --color-madder: #b10f2e;
+  --color-light-gray: #e5e5e5;
+  --color-yellow: #ffd700;
+  --color-rose: #ff2e63;
+  --color-red: #ff0000;
+  --color-purple: #9747ff;
+  --color-sky-blue: #4facfe;
+  --color-indigo: #4f00bc;
+  --color-teal: #08a9bb;
+  --color-cerulean: #06b6d4;
+  --color-logo-blue: #00f2fe;
+  --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-gradient: gradient 8s linear infinite
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #E8E4F2;         /* soft lavender-gray background */
+  --bg-secondary: #ffffff;       /* pure white for contrast sections */
+  --text-primary: #111111;       /* near-black for primary text */
+  --text-secondary: #444444;     /* medium gray for secondary text */
+  --accent-color: #4225A6;       /* deep purple-blue for branding */
+  --highlight-color: #E93573;    /* pink-red highlight for alerts/cta */
+  --border-color: #dcdcdc;       /* subtle gray borders */
+  --button-bg: #4225A6;          /* primary button background */
+  --button-text: #ffffff;        /* white button text */
+  --button-hover: #321b7d;       /* darker purple-blue on hover */
+  --card-bg: #ffffff;            /* white card background */
+  --input-bg: #ffffff;           /* white input field background */
+  --input-border: #cccccc;       /* input field border */
+  --shadow-color: rgba(0, 0, 0, 0.08); /* soft shadow */
+}
+
+:root[data-theme="dark"] {
+  --bg-primary: #111111;         /* near-black background */
+  --bg-secondary: #1a1a1a;       /* dark gray for secondary sections */
+  --text-primary: #ffffff;       /* white for primary text */
+  --text-secondary: #cfcfcf;     /* light gray for secondary text */
+  --accent-color: #4225A6;       /* deep purple-blue brand accent */
+  --highlight-color: #E93573;    /* pink-red highlight for alerts/cta */
+  --border-color: #2a2a2a;       /* dark border lines */
+  --button-bg: #4225A6;          /* primary button background */
+  --button-text: #ffffff;        /* white button text */
+  --button-hover: #5a39d3;       /* lighter purple-blue on hover */
+  --card-bg: #1e1e1e;            /* slightly lighter black for cards */
+  --input-bg: #1a1a1a;           /* input fields on dark bg */
+  --input-border: #2d2d2d;       /* input border on dark theme */
+  --shadow-color: rgba(255, 255, 255, 0.05); /* soft glow/shadow */
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  .fade-out {
+    animation: fadeOut 0.5s ease-in-out;
+  }
+  .glow {
+    animation: glow 3s infinite ease-in-out;
+  }
+  .gradient-glow {
+    animation: gradient 15s infinite alternate;
+  }
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+  }
+}
+
+ @keyframes fadeSlideUp {
+          0% { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes fadeSlideRight {
+          0% { opacity: 0; transform: translateX(-12px); filter: blur(6px); }
+          100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+        }
+        @keyframes fadeSlideLeft {
+          0% { opacity: 0; transform: translateX(12px); filter: blur(6px); }
+          100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+        }
+        
+        .animate-fade-up { animation: fadeSlideUp 0.6s ease-in both; }
+        .animate-fade-right { animation: fadeSlideRight 0.6s ease-in both; }
+        .animate-fade-left { animation: fadeSlideLeft 0.6s ease-in both; }
+        
+        .animate-delay-100 { animation-delay: 0.1s; }
+        .animate-delay-150 { animation-delay: 0.15s; }
+        .animate-delay-200 { animation-delay: 0.2s; }
+        .animate-delay-250 { animation-delay: 0.25s; }
+        .animate-delay-300 { animation-delay: 0.3s; }
+        .animate-delay-350 { animation-delay: 0.35s; }
+
+
+.mermaid-container .mermaid {
+  background-color: transparent !important;
+}
+
+.mermaid-container .mermaid svg {
+  max-width: 100%;
+  height: auto;
+  background-color: transparent !important;
+}
+
+/* Override mermaid's default colors to match your theme */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+  fill: var(--card-bg) !important;
+  stroke: var(--border-color) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .edgePath .path {
+  stroke: var(--accent-color) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .node .label {
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+}
+
+.mermaid-diagram svg {
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+  transform-origin: center center;
+}
+
+.react-transform-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.react-transform-component {
+  width: 100% !important;
+  height: 100% !important;
+}

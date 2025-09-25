@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <title>AdGuard AI - Instant Ad Compliance Checker</title>
+    <meta name="title" content="AdGuard AI - Instant Ad Compliance Checker" />
+    <meta name="description" content="Transform your learning experience with AI-powered study tools. Upload documents, get instant summaries, interactive flashcards, quizzes, and personalized learning paths." />
+    <meta name="keywords" content="AI learning, study platform, flashcards, quizzes, document analysis, educational AI, smart learning, study assistant, learning management" />
+    <meta name="author" content="AdGuardAI Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://AdGuardAI.app/" />
+    <meta property="og:title" content="AdGuard AI - Instant Ad Compliance Checker" />
+    <meta property="og:description" content="Transform your learning experience with AI-powered study tools. Upload documents, get instant summaries, interactive flashcards, quizzes, and personalized learning paths." />
+    <meta property="og:image" content="/adguardai_small.png" />
+    <meta property="og:site_name" content="AdGuardAI" />
+    
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://AdGuardAI.app/" />
+    <meta property="twitter:title" content="AdGuard AI - Instant Ad Compliance Checker" />
+    <meta property="twitter:description" content="Transform your learning experience with AI-powered study tools. Upload documents, get instant summaries, interactive flashcards, quizzes, and personalized learning paths." />
+    <meta property="twitter:image" content="/adguardai_small.png" />
+    <meta property="twitter:creator" content="@AdGuardAI" />
+    
+    <link rel="icon" type="image/png" href="/adguardai_small.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/adguardai_small.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/adguardai_small.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/adguardai_small.png" />
+    
+    <meta name="theme-color" content="#0fdbff" />
+    <meta name="msapplication-TileColor" content="#0fdbff" />
+    <meta name="msapplication-navbutton-color" content="#0fdbff" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <meta name="referrer" content="origin-when-cross-origin" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link rel="preload" href="/src/index.css" as="style" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <link rel="dns-prefetch" href="//accounts.google.com" />
+    <link rel="dns-prefetch" href="//apis.google.com" />
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "AdGuardAI",
+      "description": "AI-Powered Learning Platform for enhanced study experiences with smart tools and personalized learning",
+      "url": "https://AdGuardAI.app",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "educationalCredentialAwarded": "Study Certificates",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Instant Ad Compliance Checker"
+      },
+      "sameAs": [
+        "https://twitter.com/AdGuardAI",
+        "https://linkedin.com/company/AdGuardAI"
+      ]
+    }
+    </script>
+  </head>
+  
+  <body>
+    <div id="loading-spinner" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+      <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0fdbff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+    
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <script>
+      window.addEventListener('load', function() {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) {
+          spinner.style.display = 'none';
+        }
+      });
+    </script>
+    
+    <style>
+      @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+    </style>
+    
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>AdGuardAI requires JavaScript to function properly. Please enable JavaScript in your browser settings to access all learning features.</p>
+      </div>
+    </noscript>
+  </body>
+</html>
