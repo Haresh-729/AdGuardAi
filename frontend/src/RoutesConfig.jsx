@@ -10,6 +10,7 @@ import Sidebar from './Components/utils/Sidebar';
 import Dashboard from './Components/protected/Dashboard/Dashboard';
 import Profile from './Components/protected/Profile/Profile';
 import Onboarding from './Components/protected/Profile/Onboarding';
+import AddUpload from './Components/protected/Compliance/Upload';
 
 const RoutesConfig = () => {
   const isLoggedIn = useSelector(isUserLoggedIn);
@@ -56,6 +57,7 @@ const RoutesConfig = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/onboard" element={<Onboarding />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/add-upload" element={<AddUpload />} />
           </Routes>
         </div>
       </div>

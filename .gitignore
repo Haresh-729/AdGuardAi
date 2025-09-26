@@ -186,3 +186,5 @@ local_storage/
 node_modules/
 
 .vite/
+
+uploads/

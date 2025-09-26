@@ -24,3 +24,8 @@ export const accountEndpoints = {
   VERIFY_EMAIL: { e: BaseURL + 'account/verify-email', t: 'POST' }, // ADD THIS
   ONBOARDING: { e: BaseURL + 'account/onboarding', t: 'POST' },
 }
+
+export const complianceEndpoints = {
+  UPLOAD_AD: { e: BaseURL + 'ads/upload', t: 'POST' },
+  GET_AD_STATUS: { e: BaseURL + 'ads', t: 'GET' }, // will append /{adId}/status
+};

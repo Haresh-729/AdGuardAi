@@ -8,6 +8,7 @@ const http = require('http');
 const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/account');
 const uploadRoutes = require('./routes/upload');
+const complianceRoutes = require('./routes/compliance');
 
 const keepAlive = require('./Services/keepAlive');
 
@@ -57,6 +58,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ads', complianceRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
