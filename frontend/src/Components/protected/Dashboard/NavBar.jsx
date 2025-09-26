@@ -153,7 +153,7 @@ function NavBar() {
         {/* Right Section - Actions & Profile */}
         <div className="flex items-center space-x-2">
           {/* Credits Display */}
-          <div className="hidden sm:flex items-center relative group">
+          {/* <div className="hidden sm:flex items-center relative group">
             <div className="flex items-center bg-gradient-to-r from-[var(--accent-color)]/10 to-blue-500/10 rounded-xl px-3 py-2 border border-[var(--accent-color)]/20 transition-all duration-200 group-hover:shadow-lg">
               <Zap className="w-4 h-4 text-[var(--accent-color)] mr-2" />
               <span className="text-sm font-semibold text-[var(--text-primary)]">
@@ -164,7 +164,6 @@ function NavBar() {
               </span>
             </div>
 
-            {/* Refresh Button - Shows on Hover */}
             <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:scale-100 scale-75">
               <button
                 onClick={() => {dispatch(getUserCredits(user.id, true))}}
@@ -174,7 +173,7 @@ function NavBar() {
                 <RotateCcw className="w-3 h-3" />
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* Theme Toggle */}
           <button

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import OtpInput from 'react-otp-input';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Timer, Mail, Shield, KeyRound } from 'lucide-react';
+import { ArrowLeft, Timer, Mail, Shield, KeyRound, Sun, Moon } from 'lucide-react';
 import { selectAccount } from '../../App/DashboardSlice';
 import { verifyOTP, resendOTP } from '../../Services/Repository/UserRepo';
 
@@ -15,6 +15,7 @@ const VerifyEmail = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
   
   const acc = useSelector(selectAccount);
   const location = useLocation();
@@ -25,6 +26,24 @@ const VerifyEmail = () => {
   const email = location.state?.email || acc?.uemail || acc?.email;
   const verificationType = location.state?.type || 'email-verification'; // 'email-verification' or 'password-reset'
   const isPasswordReset = verificationType === 'password-reset';
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkTheme(savedTheme === 'dark'); // Fixed
+    } else {
+      setIsDarkTheme(false); // Default to light theme
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkTheme ? 'dark' : 'light');
+    localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
+  }, [isDarkTheme]);
+
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+  };
   
   // Cooldown timer for resend OTP
   useEffect(() => {
@@ -109,162 +128,177 @@ const VerifyEmail = () => {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-primary)] via-[var(--bg-secondary)] to-[var(--bg-primary)] opacity-50"></div>
-
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-2xl px-6">
-        <div className="bg-[var(--card-bg)] backdrop-blur-md p-8 rounded-2xl shadow-xl border border-[var(--border-color)]">
-          {/* Icon */}
-          <div className="mb-6 flex justify-center">
-            <div className="p-3 bg-[var(--accent-color)]/20 rounded-full">
-              {isPasswordReset ? (
-                <KeyRound className="w-8 h-8 text-[var(--accent-color)]" />
-              ) : (
-                <Shield className="w-8 h-8 text-[var(--accent-color)]" />
-              )}
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-color)]/10 selection:text-[var(--text-primary)] font-[Manrope,ui-sans-serif,system-ui,-apple-system,'Segoe_UI',Roboto,Helvetica,Arial]">
+      
+      {/* Top Nav */}
+      <header className="w-full">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate("/")}
+            className="inline-flex items-center gap-2 group"
+          >
+            <div className="h-8 w-8 rounded-md bg-[var(--accent-color)] text-[var(--button-text)] flex items-center justify-center shadow-sm ring-1 ring-black/5">
+              <span className="text-xs font-medium tracking-tight font-[Varela_Round,Manrope,ui-sans-serif]">AG</span>
             </div>
-          </div>
-
-          {/* Header */}
-          <h1 className="text-3xl font-bold text-center text-[var(--text-primary)] mb-2">
-            {isPasswordReset ? 'Reset Your Password' : 'Verify Your Email'}
-          </h1>
-          <p className="text-[var(--text-secondary)] text-center mb-8">
-            {isPasswordReset 
-              ? `We've sent a verification code to ${email}. Enter it below along with your new password.`
-              : `We've sent a verification code to ${email}. Please enter it below.`
-            }
-          </p>
-
-          {/* Form */}
-          <form onSubmit={handleVerifyOTP} className="space-y-6">
-            {/* OTP Input */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3 text-center">
-                Enter 6-digit verification code
-              </label>
-              <OtpInput
-                value={otp}
-                onChange={setOtp}
-                numInputs={6}
-                renderInput={(props) => (
-                  <input
-                    {...props}
-                    placeholder="0"
-                    className=" h-12 mx-1 text-center text-[var(--text-primary)] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] font-bold text-xl"
-                  />
-                )}
-                containerStyle={{
-                  justifyContent: 'space-between',
-                  gap: '0.2rem',
-                }}
-              />
-            </div>
-
-            {/* Password fields for reset */}
-            {isPasswordReset && (
-              <>
-                <div>
-                  <label
-                    htmlFor="confirm-password"
-                    className="block text-sm font-medium text-[var(--text-secondary)] mb-1"
-                  >
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      id="confirm-password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
-                      placeholder="Confirm new password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]"
-                    >
-                      {showConfirmPassword ? '🙈' : '👁️'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || otp.length !== 6}
-              className="w-full py-3 px-4 bg-[var(--button-bg)] hover:bg-[var(--button-hover)] text-[var(--button-text)] font-medium rounded-lg transition duration-200 ease-in-out transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            <span className="text-sm sm:text-base text-[var(--text-primary)] font-medium tracking-tight font-[Varela_Round,Manrope,ui-sans-serif]">AdGuard AI</span>
+          </button>
+          
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-md bg-[var(--card-bg)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] transition-colors"
+              aria-label="Toggle theme"
             >
-              {isLoading 
-                ? (isPasswordReset ? 'Resetting Password...' : 'Verifying...') 
-                : (isPasswordReset ? 'Reset Password' : 'Verify Email')
-              }
+              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-6 flex items-center justify-between text-[var(--text-secondary)]">
             <button
               onClick={handleBackNavigation}
-              className="flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Login
             </button>
-
-            <button
-              onClick={handleResendOTP}
-              disabled={resendCooldown > 0 || isResending}
-              className="flex items-center gap-2 text-[var(--accent-color)] hover:opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Timer className="w-4 h-4" />
-              {resendCooldown > 0 
-                ? `Resend in ${resendCooldown}s`
-                : isResending 
-                  ? 'Sending...' 
-                  : 'Resend Code'
-              }
-            </button>
           </div>
+        </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="h-px w-full bg-[var(--border-color)]"></div>
+        </div>
+      </header>
 
-          {/* Email display */}
-          <div className="mt-6 p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <Mail className="w-4 h-4" />
-              <span>Code sent to: </span>
-              <span className="font-medium text-[var(--text-primary)]">{email}</span>
-            </div>
-          </div>
-
-          {/* Extra Info */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[var(--text-secondary)]">
-              Didn't receive the code? Check your spam folder or{' '}
-              <button 
-                onClick={handleResendOTP}
-                disabled={resendCooldown > 0 || isResending}
-                className="text-[var(--accent-color)] hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                request a new one
-              </button>
-            </p>
-          </div>
-
-          {/* Security note for password reset */}
-          {isPasswordReset && (
-            <div className="mt-6 p-3 bg-[var(--highlight-color)] rounded-lg border border-[var(--border-color)]">
-              <p className="text-xs text-[var(--text-secondary)] text-center">
-                🔒 For your security, this verification code will expire in 10 minutes.
+      {/* Main Content */}
+      <section className="relative py-10 sm:py-14 flex items-center justify-center min-h-[calc(100vh-120px)]">
+        <div className="mx-auto max-w-md w-full px-6">
+          
+          {/* Main Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-xl">
+            <div className="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+            
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-[var(--accent-color)]/10 to-blue-500/10 p-6 text-center border-b border-[var(--border-color)]">
+              <div className="w-16 h-16 bg-gradient-to-r from-[var(--accent-color)] to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                {isPasswordReset ? (
+                  <KeyRound className="w-8 h-8 text-white" />
+                ) : (
+                  <Shield className="w-8 h-8 text-white" />
+                )}
+              </div>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2 font-[Varela_Round,Manrope,ui-sans-serif]">
+                {isPasswordReset ? 'Reset Your Password' : 'Verify Your Email'}
+              </h1>
+              <p className="text-[var(--text-secondary)] text-sm">
+                {isPasswordReset 
+                  ? `We've sent a verification code to ${email}. Enter it below along with your new password.`
+                  : `We've sent a verification code to ${email}. Please enter it below.`
+                }
               </p>
             </div>
-          )}
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3 text-center">
+                  Enter 6-digit verification code
+                </label>
+                <OtpInput
+                  value={otp}
+                  onChange={setOtp}
+                  numInputs={6}
+                  renderInput={(props) => (
+                    <input
+                      {...props}
+                      placeholder="0"
+                      className="h-12 mx-1 text-center text-[var(--text-primary)] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] font-bold text-xl"
+                    />
+                  )}
+                  containerStyle={{
+                    justifyContent: 'space-between',
+                    gap: '0.2rem',
+                  }}
+                />
+              </div>
+
+              {/* Password fields for reset */}
+              {isPasswordReset && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
+                      placeholder="Enter new password"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
+                      placeholder="Confirm new password"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={handleVerifyOTP}
+                disabled={isLoading || otp.length !== 6}
+                className="w-full inline-flex items-center justify-center rounded-xl bg-[var(--button-bg)] px-4 py-3 text-sm font-medium text-[var(--button-text)] shadow-sm hover:bg-[var(--button-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] focus:ring-offset-[var(--card-bg)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isLoading 
+                  ? (isPasswordReset ? 'Resetting Password...' : 'Verifying...') 
+                  : (isPasswordReset ? 'Reset Password' : 'Verify Email')
+                }
+              </button>
+
+              {/* Footer Actions */}
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  onClick={handleResendOTP}
+                  disabled={resendCooldown > 0 || isResending}
+                  className="inline-flex items-center gap-2 text-[var(--accent-color)] hover:opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Timer className="w-4 h-4" />
+                  {resendCooldown > 0 
+                    ? `Resend in ${resendCooldown}s`
+                    : isResending 
+                      ? 'Sending...' 
+                      : 'Resend Code'
+                  }
+                </button>
+              </div>
+
+              {/* Email Info */}
+              <div className="bg-[var(--bg-secondary)] rounded-xl p-4 border border-[var(--border-color)]">
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="w-4 h-4 text-[var(--accent-color)]" />
+                  <span className="text-[var(--text-secondary)]">Code sent to: </span>
+                  <span className="font-medium text-[var(--text-primary)]">{email}</span>
+                </div>
+              </div>
+
+              {/* Security note for password reset */}
+              {isPasswordReset && (
+                <div className="bg-[var(--highlight-color)]/10 rounded-xl p-4 border border-[var(--highlight-color)]/20">
+                  <p className="text-xs text-[var(--text-secondary)] text-center">
+                    🔒 For your security, this verification code will expire in 10 minutes.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

@@ -11,8 +11,8 @@ const checkUser = async (req, res) => {
       });
     }
 
-    const exists = await authService.checkUserExists(email);
-    res.status(200).json({ exists_flag: exists });
+    const result = await authService.checkUserExists(email);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in checkUser controller:', error);
     res.status(500).json({ 
@@ -24,7 +24,7 @@ const checkUser = async (req, res) => {
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, occupation } = req.body;
+    const { name, email, password, mobile, sector } = req.body;
     
     if (!name || !email || !password) {
       return res.status(400).json({ 
@@ -37,14 +37,11 @@ const register = async (req, res) => {
       name,
       email,
       password,
-      occupation
+      mobile,
+      sector
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Registration successful. OTP sent to email.',
-      u_id: result.u_id
-    });
+    res.status(201).json(result);
   } catch (error) {
     console.error('Error in register controller:', error);
     res.status(400).json({ 
@@ -65,11 +62,8 @@ const sendOtp = async (req, res) => {
       });
     }
 
-    await authService.sendOtpToEmail(email);
-    res.status(200).json({
-      success: true,
-      message: 'OTP sent successfully.'
-    });
+    const result = await authService.sendOtpToEmail(email);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in sendOtp controller:', error);
     res.status(400).json({ 
@@ -90,11 +84,8 @@ const resendOtp = async (req, res) => {
       });
     }
 
-    await authService.resendOtpToEmail(email);
-    res.status(200).json({
-      success: true,
-      message: 'OTP resent successfully.'
-    });
+    const result = await authService.resendOtpToEmail(email);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in resendOtp controller:', error);
     res.status(400).json({ 
@@ -115,23 +106,12 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    const verified = await authService.verifyUserOtp(email, otp);
-    
-    if (verified) {
-      res.status(200).json({
-        verified: true,
-        message: 'OTP verified. You may now log in.'
-      });
-    } else {
-      res.status(400).json({
-        verified: false,
-        message: 'Invalid or expired OTP.'
-      });
-    }
+    const result = await authService.verifyUserOtp(email, otp);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in verifyOtp controller:', error);
     res.status(400).json({ 
-      verified: false, 
+      success: false, 
       message: error.message 
     });
   }
@@ -149,14 +129,11 @@ const login = async (req, res) => {
     }
 
     const result = await authService.loginUser(email, password);
-    
-    // Return token in response body instead of setting cookie
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in login controller:', error);
     res.status(401).json({ 
-      exists_flag: false,
-      login_flag: false,
+      success: false,
       message: error.message 
     });
   }
@@ -173,11 +150,8 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    await authService.sendPasswordResetOtp(email);
-    res.status(200).json({
-      success: true,
-      message: 'OTP sent to registered email.'
-    });
+    const result = await authService.sendPasswordResetOtp(email);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in forgotPassword controller:', error);
     res.status(400).json({ 
@@ -198,11 +172,8 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    await authService.resetUserPassword(email, otp, new_password);
-    res.status(200).json({
-      success: true,
-      message: 'Password reset successfully.'
-    });
+    const result = await authService.resetUserPassword(email, otp, new_password);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error in resetPassword controller:', error);
     res.status(400).json({ 
@@ -214,7 +185,6 @@ const resetPassword = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    // No need to clear cookies, just return success
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

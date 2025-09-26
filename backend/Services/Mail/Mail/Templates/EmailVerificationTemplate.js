@@ -7,8 +7,8 @@ const otpTemplate = (otp) => {
 		<title>OTP Verification Email</title>
 		<style>
 			body {
-				background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
-				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: #111111;
+				font-family: 'Manrope', 'ui-sans-serif', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 				font-size: 16px;
 				line-height: 1.6;
 				color: #ffffff;
@@ -20,15 +20,15 @@ const otpTemplate = (otp) => {
 			.container {
 				max-width: 600px;
 				margin: 0 auto;
-				background: linear-gradient(145deg, #121212, #1e1e1e);
+				background: #1e1e1e;
 				border-radius: 20px;
 				border: 1px solid #2a2a2a;
-				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+				box-shadow: 0 20px 40px rgba(255, 255, 255, 0.05);
 				overflow: hidden;
 			}
 
 			.header {
-				background: linear-gradient(135deg, #0fdbff 0%, #1e2a78 100%);
+				background: linear-gradient(135deg, #4225A6 0%, #5a39d3 100%);
 				padding: 30px 20px;
 				text-align: center;
 				position: relative;
@@ -48,9 +48,8 @@ const otpTemplate = (otp) => {
 			.logo {
 				width: 80px;
 				height: 80px;
-				border-radius: 50%;
-				border: 3px solid rgba(255, 255, 255, 0.2);
-				background: rgba(255, 255, 255, 0.1);
+				border-radius: 12px;
+				background: #4225A6;
 				margin: 0 auto 15px;
 				display: flex;
 				align-items: center;
@@ -58,17 +57,21 @@ const otpTemplate = (otp) => {
 				backdrop-filter: blur(10px);
 				position: relative;
 				z-index: 1;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 			}
 
-			.logo-icon {
-				font-size: 36px;
+			.logo-text {
 				color: #ffffff;
+				font-size: 14px;
+				font-weight: 600;
+				font-family: 'Varela Round', 'Manrope', sans-serif;
 			}
 
 			.brand-name {
 				color: #ffffff;
 				font-size: 28px;
-				font-weight: 700;
+				font-weight: 500;
+				font-family: 'Varela Round', 'Manrope', sans-serif;
 				margin: 0;
 				text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 				position: relative;
@@ -81,14 +84,11 @@ const otpTemplate = (otp) => {
 			}
 
 			.message {
-				font-size: 24px;
-				font-weight: 600;
+				font-size: 32px;
+				font-weight: 500;
 				margin-bottom: 20px;
-				color: #ffffff;
-				background: linear-gradient(135deg, #0fdbff, #ffffff);
-				-webkit-background-clip: text;
-				-webkit-text-fill-color: transparent;
-				background-clip: text;
+				color: #4225A6;
+				font-family: 'Varela Round', 'Manrope', sans-serif;
 			}
 
 			.body {
@@ -103,9 +103,9 @@ const otpTemplate = (otp) => {
 			}
 
 			.otp-container {
-				background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
-				border: 2px solid #0fdbff;
-				border-radius: 15px;
+				background: #1a1a1a;
+				border: 2px solid #4225A6;
+				border-radius: 16px;
 				padding: 25px;
 				margin: 30px 0;
 				position: relative;
@@ -119,7 +119,7 @@ const otpTemplate = (otp) => {
 				left: -100%;
 				width: 100%;
 				height: 100%;
-				background: linear-gradient(90deg, transparent, rgba(15, 219, 255, 0.1), transparent);
+				background: linear-gradient(90deg, transparent, rgba(66, 37, 166, 0.1), transparent);
 				animation: shimmer 2s infinite;
 			}
 
@@ -130,7 +130,7 @@ const otpTemplate = (otp) => {
 
 			.otp-label {
 				font-size: 14px;
-				color: #0fdbff;
+				color: #4225A6;
 				margin-bottom: 10px;
 				text-transform: uppercase;
 				letter-spacing: 1px;
@@ -139,31 +139,31 @@ const otpTemplate = (otp) => {
 
 			.otp-code {
 				font-size: 36px;
-				font-weight: 800;
+				font-weight: 700;
 				color: #ffffff;
 				letter-spacing: 8px;
 				font-family: 'Courier New', monospace;
 				margin: 0;
-				text-shadow: 0 0 10px rgba(15, 219, 255, 0.3);
+				text-shadow: 0 0 10px rgba(66, 37, 166, 0.3);
 				position: relative;
 				z-index: 1;
 			}
 
 			.validity {
-				background: rgba(255, 45, 85, 0.1);
-				border: 1px solid rgba(255, 45, 85, 0.3);
-				border-radius: 10px;
+				background: rgba(233, 53, 115, 0.1);
+				border: 1px solid rgba(233, 53, 115, 0.3);
+				border-radius: 12px;
 				padding: 15px;
 				margin: 25px 0;
-				color: #ff6b9d;
+				color: #E93573;
 				font-size: 14px;
 				font-weight: 500;
 			}
 
 			.security-note {
-				background: rgba(15, 219, 255, 0.05);
-				border: 1px solid rgba(15, 219, 255, 0.2);
-				border-radius: 10px;
+				background: rgba(66, 37, 166, 0.05);
+				border: 1px solid rgba(66, 37, 166, 0.2);
+				border-radius: 12px;
 				padding: 20px;
 				margin: 25px 0;
 				color: #cfcfcf;
@@ -172,7 +172,7 @@ const otpTemplate = (otp) => {
 			}
 
 			.security-icon {
-				color: #0fdbff;
+				color: #4225A6;
 				font-size: 18px;
 				margin-right: 8px;
 			}
@@ -186,12 +186,12 @@ const otpTemplate = (otp) => {
 
 			.support {
 				font-size: 14px;
-				color: #999999;
+				color: #cfcfcf;
 				line-height: 1.6;
 			}
 
 			.support a {
-				color: #0fdbff;
+				color: #4225A6;
 				text-decoration: none;
 				font-weight: 600;
 			}
@@ -221,6 +221,10 @@ const otpTemplate = (otp) => {
 					font-size: 28px;
 					letter-spacing: 4px;
 				}
+				
+				.message {
+					font-size: 28px;
+				}
 			}
 		</style>
 	</head>
@@ -230,9 +234,9 @@ const otpTemplate = (otp) => {
 			<!-- Header with logo and brand -->
 			<div class="header">
 				<div class="logo">
-					<div class="logo-icon">🔐</div>
+					<div class="logo-text">AG</div>
 				</div>
-				<h1 class="brand-name">StudyGenie</h1>
+				<h1 class="brand-name">AdGuard AI</h1>
 			</div>
 
 			<!-- Main content -->
@@ -241,7 +245,7 @@ const otpTemplate = (otp) => {
 				
 				<div class="body">
 					<p>Hello there!</p>
-					<p>Thank you for choosing StudyGenie. To complete your account verification, please use the one-time password (OTP) below:</p>
+					<p>Thank you for choosing AdGuard AI. To complete your account verification, please use the one-time password (OTP) below:</p>
 				</div>
 
 				<!-- OTP Display -->
@@ -252,7 +256,7 @@ const otpTemplate = (otp) => {
 
 				<!-- Validity notice -->
 				<div class="validity">
-					⏰ This verification code expires in <strong>5 minutes</strong>
+					⏰ This verification code expires in <strong>10 minutes</strong>
 				</div>
 
 				<!-- Security note -->
@@ -271,9 +275,9 @@ const otpTemplate = (otp) => {
 			<!-- Footer -->
 			<div class="footer">
 				<div class="support">
-					Need help? Contact us at <a href="mailto:haresh.personal4@gmail.com">support@studygenie.com</a>
+					Need help? Contact us at <a href="mailto:hello@adguard.ai">hello@adguard.ai</a>
 					<br>
-					We're here to assist you 24/7
+					We're here to assist you with ad compliance checks
 				</div>
 			</div>
 		</div>

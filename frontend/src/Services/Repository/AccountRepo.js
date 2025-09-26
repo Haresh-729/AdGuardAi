@@ -83,7 +83,7 @@ export async function changePassword(passwordData) {
   const loadingToast = toast.loading("Changing password...");
   try {
     const response = await apiConnector(
-      CHANGE_PASSWORD.t,
+      CHANGE_PASSWORD.t, // This is now 'POST'
       CHANGE_PASSWORD.e,
       passwordData
     );
@@ -194,7 +194,7 @@ export async function getAllUsers() {
     console.log('Get All Users API response: ', response);
     if (response.status === 200) {
       toast.success('Users fetched successfully');
-      return response.data;
+      return response.data; // This returns array directly
     } else {
       throw new Error(response.data?.message || 'Failed to fetch users');
     }
@@ -291,18 +291,11 @@ export function completeOnboarding(onboardingData) {
       if (response.status === 200 && response.data.success) {
         toast.success('Profile setup completed successfully!');
         
-        // Update account in Redux with the new profile data
         const currentAccount = JSON.parse(localStorage.getItem('account')) || {};
         const updatedAccount = {
           ...currentAccount,
-          uname: response.data.user.name,
-          uemail: response.data.user.email,
-          profile_url: response.data.user.profile_url,
-          dob: response.data.user.dob,
-          profession: response.data.user.profession,
-          exam_language: response.data.user.exam_language,
-          native_language: response.data.user.native_language,
-          is_new: false // Mark as no longer new user
+          // Update based on actual API response structure
+          is_new: false
         };
         
         dispatch(setAccount(updatedAccount));
@@ -318,4 +311,27 @@ export function completeOnboarding(onboardingData) {
       toast.dismiss(loadingToast);
     }
   };
+}
+
+export async function verifyEmailManually(email) {
+  const loadingToast = toast.loading('Verifying email...');
+  try {
+    const response = await apiConnector(VERIFY_EMAIL.t, VERIFY_EMAIL.e, {
+      email: email
+    });
+
+    console.log('Verify Email API response: ', response);
+    if (response.status === 200) {
+      toast.success('Email verified successfully');
+      return response.data;
+    } else {
+      throw new Error(response.data?.message || 'Failed to verify email');
+    }
+  } catch (error) {
+    console.log('Verify Email API Error:', error);
+    toast.error(error.response?.data?.message || 'Failed to verify email');
+    throw error;
+  } finally {
+    toast.dismiss(loadingToast);
+  }
 }

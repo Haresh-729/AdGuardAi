@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { HeroPage, Login, VerifyEmail } from './Components';
+import { HeroPage, Login, VerifyEmail, ForgotPassword } from './Components';
 import { dashboardMenuState } from './App/DashboardSlice';
 import { isUserLoggedIn } from './App/DashboardSlice';
 
@@ -34,6 +34,12 @@ const RoutesConfig = () => {
           key={'verify-email'}
           className="transition-all scrollbar-hide"
           element={[<VerifyEmail key={"verify_email"}/>]}
+        />
+        <Route
+          path="/forgot-password"
+          key={'forgot-password'}
+          className="transition-all scrollbar-hide"
+          element={[<ForgotPassword key={"forgot-password"}/>]}
         />
       </Routes>
     );

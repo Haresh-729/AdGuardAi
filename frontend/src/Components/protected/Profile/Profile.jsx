@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectAccount, selectTheme } from "../../../App/DashboardSlice";
 import {
   getCurrentUser,
-  getUserCredits,
   updateUser,
   changePassword,
   deleteUser,
@@ -29,6 +28,7 @@ import {
   Shield,
   CheckCircle,
   Clock,
+  PhoneCall,
 } from "lucide-react";
 
 // Move this OUTSIDE the Profile component, before the Profile component definition
@@ -254,15 +254,15 @@ const ProfileDisplay = ({
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  Occupation
+                  Sector
                 </label>
                 <input
                   type="text"
-                  value={profileData.occupation}
+                  value={profileData.sector}
                   onChange={(e) =>
                     setProfileData({
                       ...profileData,
-                      occupation: e.target.value,
+                      sector: e.target.value,
                     })
                   }
                   placeholder="e.g., Software Developer"
@@ -315,22 +315,17 @@ const ProfileDisplay = ({
                   <span>{userData.email}</span>
                 </div>
 
-                {userData.occupation && (
+                {userData.sector && ( // Changed from occupation
                   <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <Briefcase className="w-4 h-4" />
-                    <span>{userData.occupation}</span>
+                    <span>{userData.sector}</span>
                   </div>
                 )}
 
                 <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                  <Shield className="w-4 h-4" />
-                  <span className="capitalize">{userData.role} Account</span>
+                  <PhoneCall className="w-4 h-4" />
+                  <span className="capitalize">{userData.mobile}</span>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[var(--accent-color)] font-semibold text-lg">
-                <Coins className="w-5 h-5" />
-                <span>{userData.credits} Credits</span>
               </div>
 
               <button
@@ -476,7 +471,7 @@ const Profile = () => {
   // Profile form state
   const [profileData, setProfileData] = useState({
     name: "",
-    occupation: "",
+    sector: "",
     profile_url: "",
   });
 
@@ -503,7 +498,7 @@ const Profile = () => {
           setUserData(response);
           setProfileData({
             name: response.name || "",
-            occupation: response.occupation || "",
+            occupation: response.sector || "",
             profile_url: response.profile_url || "",
           });
         }
@@ -521,7 +516,7 @@ const Profile = () => {
     const result = await dispatch(
       updateUser(userData.u_id, {
         name: profileData.name,
-        occupation: profileData.occupation,
+        sector: profileData.sector,
         profile_url: profileData.profile_url,
       })
     );
@@ -533,7 +528,7 @@ const Profile = () => {
         setUserData(updatedData);
         setProfileData({
           name: updatedData.name || "",
-          occupation: updatedData.occupation || "",
+          sector: updatedData.sector || "",
           profile_url: updatedData.profile_url || "",
         });
       }
@@ -582,6 +577,8 @@ const Profile = () => {
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 

@@ -43,7 +43,7 @@ export function login(email, password, navigate) {
 
       console.log("Login API response : ", response);
       
-      if (response.data.login_flag) {
+      if (response.data.success) {
         toast.success("Login Successful!");
         
         // Create account object matching your API response
@@ -61,7 +61,7 @@ export function login(email, password, navigate) {
         dispatch(setAccount(accountData));
         
         // Navigate based on first time user
-        if (response.data.isFirstTime) {
+        if (response.data.isFirstTime || !response.data.user.mobile) {
           navigate("/onboard");
         } else {
           dispatch(setDFeature({ dashboardFeature: "Home" }));
@@ -94,7 +94,7 @@ export function login(email, password, navigate) {
 }
 
 // Register function
-export function register(name, email, password, occupation, navigate) {
+export function register(name, email, password, sector, navigate) {
   return async (dispatch) => {
     const loadingToast = toast.loading("Creating your account...");
     try {
@@ -102,7 +102,7 @@ export function register(name, email, password, occupation, navigate) {
         name,
         email,
         password,
-        occupation
+        sector // Changed from 'occupation' to 'sector'
       });
       
       console.log("Register API response : ", response);
@@ -110,16 +110,14 @@ export function register(name, email, password, occupation, navigate) {
       if (response.data.success) {
         toast.success("Registration successful! Please verify your email.");
         
-        // Store temporary account data for verification
         const tempAccountData = {
-          id: response.data.u_id,
+          id: response.data.user.u_id, // Note: API returns 'user' object
           uname: name,
           uemail: email
         };
         
         dispatch(setAccountAfterRegister(tempAccountData));
         
-        // Navigate to email verification with email in state
         navigate("/verify-email", { 
           state: { 
             email: email, 
@@ -194,7 +192,7 @@ export function verifyOTP(email, otp, navigate) {
       const response = await apiConnector('POST', VERIFY_OTP, { email, otp });
       console.log('Verify OTP API response : ', response);
       
-      if (response.data.verified) {
+      if (response.data.success) {
         toast.success('Email verified successfully!');
         navigate('/login');
         setTimeout(() => {
@@ -291,8 +289,8 @@ export function loginWithGoogle(credentialResponse, navigate) {
         };
 
         dispatch(setAccount(accountData));
-
-        if (response.data.isFirstTime) {
+        console.log('User mobile______:', response.data.user.mobile);
+        if (response.data.user.mobile === null) {
           dispatch(setDFeature({ dashboardFeature: 'Home' }));
           navigate('/onboard');
         } else {
@@ -309,6 +307,35 @@ export function loginWithGoogle(credentialResponse, navigate) {
           error.message ||
           'Failed to sign in with Google'
       );
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+}
+
+export function resetPassword(email, otp, newPassword, navigate) {
+  return async (dispatch) => {
+    const loadingToast = toast.loading('Resetting password...');
+    try {
+      const response = await apiConnector('POST', authEndpoints.RESET_PASSWORD, { 
+        email, 
+        otp, 
+        new_password: newPassword 
+      });
+      
+      console.log('Reset Password API response : ', response);
+      
+      if (response.data.success) {
+        toast.success('Password reset successfully!');
+        navigate('/login');
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Password reset failed');
+      }
+    } catch (error) {
+      console.log('Reset Password API Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to reset password');
+      throw error;
     } finally {
       toast.dismiss(loadingToast);
     }

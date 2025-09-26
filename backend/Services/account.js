@@ -2,15 +2,12 @@ const { supabase } = require("../config/config");
 const bcrypt = require("bcrypt");
 
 const usersTable = "users";
-const workflowsTable = "workflows";
-const triggerLogTable = "trigger_log";
 
-// Get user by ID
 const getUserById = async (userId) => {
   try {
     const { data, error } = await supabase
       .from(usersTable)
-      .select("*")
+      .select("u_id, name, email, profile_url, dob, sector, mobile, created_at, is_active, e_verified, updated_at")
       .eq("u_id", userId)
       .single();
 
@@ -24,12 +21,11 @@ const getUserById = async (userId) => {
   }
 };
 
-// Get all users
 const getAllUsers = async () => {
   try {
     const { data, error } = await supabase
       .from(usersTable)
-      .select("*")
+      .select("u_id, name, email, sector, is_active")
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -40,11 +36,9 @@ const getAllUsers = async () => {
   }
 };
 
-// Update user profile
 const updateUser = async (userId, updates) => {
   try {
-    // Filter allowed fields for update
-    const allowedFields = ['name', 'profession', 'profile_url', 'dob', 'exam_language', 'native_language'];
+    const allowedFields = ['name', 'sector', 'profile_url', 'mobile'];
     const filteredUpdates = {};
     
     Object.keys(updates).forEach(key => {
@@ -63,7 +57,7 @@ const updateUser = async (userId, updates) => {
       .from(usersTable)
       .update(filteredUpdates)
       .eq("u_id", userId)
-      .select("u_id, name, email, profession, is_active, profile_url")
+      .select("u_id, name, sector, profile_url, mobile")
       .single();
 
     if (error) throw error;
@@ -76,10 +70,35 @@ const updateUser = async (userId, updates) => {
   }
 };
 
-// Change password
+const completeOnboarding = async (userId, onboardingData) => {
+  try {
+    const { profile_url, dob, sector, mobile } = onboardingData;
+    
+    const { data, error } = await supabase
+      .from(usersTable)
+      .update({ 
+        profile_url,
+        dob,
+        sector,
+        mobile,
+        updated_at: new Date().toISOString()
+      })
+      .eq("u_id", userId)
+      .select("u_id, dob, sector, mobile")
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error("User not found");
+
+    return data;
+  } catch (error) {
+    console.error("Error in completeOnboarding:", error);
+    throw new Error(error.message || "Failed to complete onboarding");
+  }
+};
+
 const changePassword = async (userId, oldPassword, newPassword) => {
   try {
-    // First verify the old password
     const { data: user, error } = await supabase
       .from(usersTable)
       .select("password")
@@ -88,17 +107,14 @@ const changePassword = async (userId, oldPassword, newPassword) => {
 
     if (error || !user) throw new Error("User not found");
 
-    // Verify old password
     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
     if (!isOldPasswordValid) {
       throw new Error("Current password is incorrect");
     }
 
-    // Hash new password
     const saltRounds = 10;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Update password
     const { error: updateError } = await supabase
       .from(usersTable)
       .update({ 
@@ -115,83 +131,6 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   }
 };
 
-// Deactivate user (soft delete)
-const deactivateUser = async (userId) => {
-  try {
-    const { data, error } = await supabase
-      .from(usersTable)
-      .update({ 
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq("u_id", userId)
-      .select("u_id")
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error("User not found");
-
-  } catch (error) {
-    console.error("Error in deactivateUser:", error);
-    throw new Error(error.message || "Failed to deactivate user");
-  }
-};
-
-// Get user credits
-const getUserCredits = async (userId) => {
-  try {
-    const { data, error } = await supabase
-      .from(usersTable)
-      .select("credits")
-      .eq("u_id", userId)
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error("User not found");
-
-    return data.credits;
-  } catch (error) {
-    console.error("Error in getUserCredits:", error);
-    throw new Error(error.message || "Failed to get user credits");
-  }
-};
-
-// Update user credits
-const updateUserCredits = async (userId, amount, reason = null) => {
-  try {
-    // Get current credits
-    const currentCredits = await getUserCredits(userId);
-    const newCredits = currentCredits + amount;
-
-    // Ensure credits don't go below 0
-    if (newCredits < 0) {
-      throw new Error("Insufficient credits");
-    }
-
-    const { data, error } = await supabase
-      .from(usersTable)
-      .update({ 
-        credits: newCredits,
-        updated_at: new Date().toISOString()
-      })
-      .eq("u_id", userId)
-      .select("credits")
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error("User not found");
-
-    // TODO: Log credit transaction if you have a credits_log table
-    console.log(`Credits updated for user ${userId}: ${amount} (${reason || 'No reason provided'})`);
-
-    return data.credits;
-  } catch (error) {
-    console.error("Error in updateUserCredits:", error);
-    throw new Error(error.message || "Failed to update credits");
-  }
-};
-
-// Mark email as verified
 const markEmailVerified = async (email) => {
   try {
     const { data, error } = await supabase
@@ -213,89 +152,37 @@ const markEmailVerified = async (email) => {
   }
 };
 
-// Get user activity analytics
-const getUserActivity = async (userId) => {
+const deactivateUser = async (userId, password) => {
   try {
-    // Get user basic info
-    const { data: user, error: userError } = await supabase
+    const { data: user, error } = await supabase
       .from(usersTable)
-      .select("created_at")
+      .select("password")
       .eq("u_id", userId)
       .single();
 
-    if (userError || !user) throw new Error("User not found");
+    if (error || !user) throw new Error("User not found");
 
-    // Get workflow counts
-    const { data: workflows, error: workflowError } = await supabase
-      .from(workflowsTable)
-      .select("wf_id, created_at, executed_count")
-      .eq("created_by", userId);
-
-    if (workflowError) {
-      console.error("Error fetching workflows:", workflowError);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error("Incorrect password");
     }
 
-    // Get trigger log counts
-    const { data: triggerLogs, error: triggerError } = await supabase
-      .from(triggerLogTable)
-      .select("tl_id, created_at")
-      .in("wf_id", workflows?.map(w => w.wf_id) || []);
-
-    if (triggerError) {
-      console.error("Error fetching trigger logs:", triggerError);
-    }
-
-    // Calculate activity metrics
-    const createdWorkflowsCount = workflows?.length || 0;
-    const totalExecutedWorkflows = workflows?.reduce((sum, wf) => sum + (wf.executed_count || 0), 0) || 0;
-    const totalTriggersRun = triggerLogs?.length || 0;
-
-    // Get last login (you might need to track this separately)
-    // For now, using account creation date as placeholder
-    const lastLoginAt = user.created_at; // TODO: Implement proper last login tracking
-
-    return {
-      last_login_at: lastLoginAt,
-      created_workflows_count: createdWorkflowsCount,
-      executed_workflows_count: totalExecutedWorkflows,
-      total_triggers_run: totalTriggersRun,
-      account_created_at: user.created_at
-    };
-
-  } catch (error) {
-    console.error("Error in getUserActivity:", error);
-    throw new Error(error.message || "Failed to get user activity");
-  }
-};
-
-// Add this function to the existing account.js service
-const completeOnboarding = async (userId, onboardingData) => {
-  try {
-    const { profile_url, dob, profession, exam_language, native_language, phone } = onboardingData;
-    
-    const { data, error } = await supabase
+    const { data, error: updateError } = await supabase
       .from(usersTable)
       .update({ 
-        profile_url,
-        dob,
-        profession,
-        exam_language,
-        native_language,
-        phone,
-        whatsapp_number: phone,
+        is_active: false,
         updated_at: new Date().toISOString()
       })
       .eq("u_id", userId)
-      .select("u_id, name, email, profile_url, dob, profession, exam_language, native_language, phone ")
+      .select("u_id")
       .single();
 
-    if (error) throw error;
+    if (updateError) throw updateError;
     if (!data) throw new Error("User not found");
 
-    return data;
   } catch (error) {
-    console.error("Error in completeOnboarding:", error);
-    throw new Error(error.message || "Failed to complete onboarding");
+    console.error("Error in deactivateUser:", error);
+    throw new Error(error.message || "Failed to deactivate user");
   }
 };
 
@@ -303,11 +190,8 @@ module.exports = {
   getUserById,
   getAllUsers,
   updateUser,
-  changePassword,
-  deactivateUser,
-  getUserCredits,
-  updateUserCredits,
-  markEmailVerified,
-  getUserActivity,
   completeOnboarding,
+  changePassword,
+  markEmailVerified,
+  deactivateUser
 };

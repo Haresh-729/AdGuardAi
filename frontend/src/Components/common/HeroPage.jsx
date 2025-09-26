@@ -35,22 +35,24 @@ import {
   Moon,
   Sun
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const HeroPage = () => {
   const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'light');
+      setIsDarkTheme(savedTheme === 'dark'); // Fixed
     } else {
-      setIsDarkTheme(window.matchMedia('(prefers-color-scheme: light)').matches);
+      setIsDarkTheme(false); // Default to light theme
     }
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDarkTheme ? 'light' : 'dark');
-    localStorage.setItem('theme', isDarkTheme ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', isDarkTheme ? 'dark' : 'light');
+    localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
   }, [isDarkTheme]);
 
   const toggleTheme = () => {
@@ -85,10 +87,10 @@ const HeroPage = () => {
             </button>
             <div className="hidden sm:flex items-center gap-3">
               <a href="#contact" className="text-sm text-[var(--text-primary)] hover:text-[var(--button-hover)]">Contact</a>
-              <a href="#demo" className="inline-flex items-center rounded-md bg-[var(--button-bg)] px-3.5 py-2 text-sm text-[var(--button-text)] shadow-sm hover:bg-[var(--button-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] focus:ring-offset-[var(--bg-primary)]">
+              <button onClick={()=>{navigate("/login")}} className="inline-flex items-center rounded-md bg-[var(--button-bg)] px-3.5 py-2 text-sm text-[var(--button-text)] shadow-sm hover:bg-[var(--button-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] focus:ring-offset-[var(--bg-primary)]">
                 <PlayCircle className="mr-2 h-4 w-4" />
-                Try the Demo
-              </a>
+                Get Started
+              </button>
             </div>
           </div>
         </div>

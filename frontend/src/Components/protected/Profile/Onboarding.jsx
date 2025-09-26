@@ -5,8 +5,6 @@ import {
   User,
   Calendar,
   Briefcase,
-  Globe,
-  Languages,
   Phone,
   Camera,
   ArrowRight,
@@ -27,14 +25,12 @@ const Onboarding = () => {
   const [formData, setFormData] = useState({
     profile_url: '',
     dob: '',
-    profession: '',
-    exam_language: 'English',
-    native_language: '',
-    phone: ''
+    sector: '',
+    mobile: ''
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const totalSteps = 3;
+  const totalSteps = 2;
 
   const handleInputChange = (e) => {
     setFormData({
@@ -71,11 +67,9 @@ const Onboarding = () => {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return formData.dob && formData.profession;
+        return formData.dob && formData.sector;
       case 2:
-        return formData.exam_language && formData.native_language;
-      case 3:
-        return formData.phone;
+        return formData.mobile;
       default:
         return false;
     }
@@ -107,7 +101,7 @@ const Onboarding = () => {
             {/* Progress Bar */}
             <div className="p-6 pb-0">
               <div className="flex items-center justify-between mb-6">
-                {[1, 2, 3].map((step) => (
+                {[1, 2].map((step) => (
                   <div key={step} className="flex items-center">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
@@ -181,14 +175,14 @@ const Onboarding = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      Profession *
+                      Sector *
                     </label>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-5 h-5" />
                       <input
                         type="text"
-                        name="profession"
-                        value={formData.profession}
+                        name="sector" // Changed from "profession"
+                        value={formData.sector} // Changed from profession
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
                         placeholder="e.g., Software Engineer"
@@ -199,62 +193,8 @@ const Onboarding = () => {
                 </div>
               )}
 
-              {/* Step 2: Language Preferences */}
-              {currentStep === 2 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
-                    Language Preferences
-                  </h2>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      Preferred Exam Language *
-                    </label>
-                    <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-5 h-5" />
-                      <select
-                        name="exam_language"
-                        value={formData.exam_language}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
-                        required
-                      >
-                        {languages.map((lang) => (
-                          <option key={lang} value={lang}>
-                            {lang}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      Native Language *
-                    </label>
-                    <div className="relative">
-                      <Languages className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-5 h-5" />
-                      <select
-                        name="native_language"
-                        value={formData.native_language}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
-                        required
-                      >
-                        <option value="">Select your native language</option>
-                        {languages.map((lang) => (
-                          <option key={lang} value={lang}>
-                            {lang}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Step 3: Contact */}
-              {currentStep === 3 && (
+              {currentStep === 2 && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
                     Contact Information
@@ -262,14 +202,14 @@ const Onboarding = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      Phone Number *
+                      Mobile Number *
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-5 h-5" />
                       <input
                         type="tel"
-                        name="phone"
-                        value={formData.phone}
+                        name="mobile"
+                        value={formData.mobile}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-3 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-primary)]"
                         placeholder="Enter your phone number"
