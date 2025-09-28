@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # 🛡️ AdGuard AI – Instant Ad Compliance Checker
 
 **Author:** Haresh Kurade  
@@ -159,6 +160,8 @@ This project is licensed under the **MIT License**.
 
 > 💡 AdGuard AI – Keeping ads **ethical, compliant, and trusted**.
 =======
+=======
+>>>>>>> 77988b19d9b22591c63459f972130d5d7daa5cd8
 # AdGuard AI
 ## Instant Ad Compliance Checker: An AI-Powered Multimodal Tool for Fast, Policy-Safe Ad Approvals
 
@@ -379,4 +382,7 @@ We welcome contributions! Please read our contributing guidelines and submit pul
 ---
 
 **AdGuard AI** - Transforming ad compliance from a bottleneck into a collaborative, AI-assisted process that empowers advertisers and streamlines operations.
+<<<<<<< HEAD
 >>>>>>> 5a305726b1e9e007526c77ec2308e4b93e29a883
+=======
+>>>>>>> 77988b19d9b22591c63459f972130d5d7daa5cd8
