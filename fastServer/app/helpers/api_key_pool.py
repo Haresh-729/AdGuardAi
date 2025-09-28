@@ -14,20 +14,24 @@ class APIKeyPool:
             os.getenv('GROQ_API_KEY_4')
         ]
         self.keys = [k for k in keys if k]
-        self.key_status = {key: {"available": True, "reset_time": 0} for key in self.keys}
+        self.key_status = {key: {"available": True, "reset_time": 0, "last_used": 0} for key in self.keys}  # Added last_used
         self.lock = threading.Lock()
+        self.min_interval = 15.0  # 1 second between requests per key
     
     def get_key_with_retry(self):
         with self.lock:
-            # Reset expired keys
             current_time = time.time()
+            
+            # Reset expired keys
             for key in self.key_status:
                 if not self.key_status[key]["available"] and current_time >= self.key_status[key]["reset_time"]:
                     self.key_status[key]["available"] = True
             
-            # Return available key
+            # Find available key that hasn't been used recently
             for key in self.keys:
-                if self.key_status[key]["available"]:
+                if (self.key_status[key]["available"] and 
+                    current_time - self.key_status[key]["last_used"] >= self.min_interval):
+                    self.key_status[key]["last_used"] = current_time  # Mark as used
                     return key
             return None
     

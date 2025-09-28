@@ -132,9 +132,36 @@ export const ProgressModal = ({ progressData, onClose }) => {
   ];
 
   const getStageStatus = (stageKey) => {
-    const stage = progressData.stages?.find(s => s.step === stageKey);
-    return stage?.status || 'pending';
-  };
+  switch (stageKey) {
+    case 'upload':
+      if (progressData.media_upload_completed) return 'completed';
+      if (progressData.upload_started) return 'in_progress';
+      return 'pending';
+      
+    case 'media_processing':
+      if (progressData.media_upload_completed) return 'completed';
+      if (progressData.media_upload_started) return 'in_progress';
+      return 'pending';
+      
+    case 'compliance_check':
+      if (progressData.compliance_check_completed) return 'completed';
+      if (progressData.compliance_check_started) return 'in_progress';
+      return 'pending';
+      
+    case 'call':
+      if (progressData.call_process_completed) return 'completed';
+      if (progressData.call_scheduled) return 'in_progress';
+      return 'pending';
+      
+    case 'report':
+      if (progressData.report_generation_completed) return 'completed';
+      if (progressData.report_generation_started) return 'in_progress';
+      return 'pending';
+      
+    default:
+      return 'pending';
+  }
+};
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -145,7 +172,7 @@ export const ProgressModal = ({ progressData, onClose }) => {
     }
   };
 
-  const isFinished = progressData.current_status === 'compliance_completed';
+  const isFinished = progressData.processing_completed;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

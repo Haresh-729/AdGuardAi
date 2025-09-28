@@ -48,3 +48,33 @@ class ComplianceResponse(BaseModel):
     link_op: Optional[Dict[str, Any]] = None
     video_op: Optional[Dict[str, Any]] = None
     processing_summary: Dict[str, Any]
+
+class PCCAnalysisRequest(BaseModel):
+    compliance_results: Optional[Dict[str, Any]] = None
+    transcript: Optional[Dict[str, Any]] = None
+
+class GenerateReportRequest(BaseModel):
+    compliance_results: Optional[Dict[str, Any]] = None
+    raw_output: Optional[Dict[str, Any]] = None
+    pcc_analysis: Optional[Dict[str, Any]] = None
+    user_data: Optional[Dict[str, Any]] = None
+    ad_details: Optional[Dict[str, Any]] = None
+
+class PCCAnalysisResponse(BaseModel):
+    pcc_verdict: str
+    pcc_reason: str
+    confidence_score: float
+    compliance_score: int
+    call_insights: Dict[str, Any]
+    confidence_while_answering: int
+    truth_level: int
+    recommendation: str
+    analysis_timestamp: str
+
+class GenerateReportResponse(BaseModel):
+    report_id: str
+    executive_summary: Dict[str, Any]
+    detailed_analysis: Dict[str, Any]
+    recommendations: List[str]
+    compliance_status: str
+    generated_at: str

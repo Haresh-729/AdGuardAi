@@ -1,7 +1,11 @@
 const express = require('express');
 const authMiddleware = require('../Middlewares/auth');
 const multer = require('multer');
-const { uploadAd, getAdStatus } = require('../controllers/compliance');
+const { uploadAd, getAdStatus,  
+  getUserReports,
+  getAllReports,
+  approveAdvertisement,
+  rejectAdvertisement } = require('../controllers/compliance');
 
 const router = express.Router();
 
@@ -51,5 +55,17 @@ router.post('/upload',
 
 // Get advertisement status
 router.get('/:adId/status', getAdStatus);
+
+// Get current user's reports
+router.get('/my-reports', getUserReports);
+
+// Get all reports (admin)
+router.get('/all-reports', getAllReports);
+
+// Approve advertisement
+router.post('/approve/:analysisResultsId', approveAdvertisement);
+
+// Reject advertisement
+router.post('/reject/:analysisResultsId', rejectAdvertisement);
 
 module.exports = router;

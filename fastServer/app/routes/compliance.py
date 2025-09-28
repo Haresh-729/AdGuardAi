@@ -5,7 +5,11 @@ from app.models.schemas import (
     TextAnalysisRequest,
     ImageAnalysisRequest,
     AudioAnalysisRequest,
-    VideoAnalysisRequest
+    VideoAnalysisRequest,
+    PCCAnalysisRequest,
+    GenerateReportRequest,
+    PCCAnalysisResponse,
+    GenerateReportResponse
 )
 from app.services.compliance_service import ComplianceService
 from typing import Dict, Any
@@ -134,3 +138,33 @@ async def test_audio_extraction(video_url: str):
             "success": False,
             "error": str(e)
         }
+    
+@router.post("/pcc-analysis", response_model=Dict[str, Any])
+async def analyze_pcc_call(request: PCCAnalysisRequest):
+    """
+    Post-call compliance analysis based on compliance results and call transcript
+    """
+    try:
+        result = compliance_service.analyze_pcc_call(request)
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"PCC analysis failed: {str(e)}"
+        )
+
+@router.post("/generate-report", response_model=Dict[str, Any])
+async def generate_comprehensive_report(request: GenerateReportRequest):
+    """
+    Generate comprehensive compliance report combining all analysis results
+    """
+    try:
+        result = compliance_service.generate_comprehensive_report(request)
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Report generation failed: {str(e)}"
+        )

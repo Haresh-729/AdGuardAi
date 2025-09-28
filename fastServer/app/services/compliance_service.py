@@ -6,7 +6,7 @@ from app.helpers.policy_compliance_checker import PolicyComplianceChecker
 from app.helpers.image_compliance_checker import ImageComplianceChecker
 from app.helpers.audio_compliance_checker import AudioComplianceChecker
 from app.helpers.video_compliance_checker import VideoComplianceChecker
-from app.models.schemas import ComplianceCheckRequest
+from app.models.schemas import ComplianceCheckRequest, PCCAnalysisRequest, GenerateReportRequest
 from app.helpers.llm_client import call_llm_gemini
 import requests
 from urllib.parse import urlparse
@@ -633,3 +633,219 @@ class ComplianceService:
                 }
             ]
         
+    def analyze_pcc_call(self, request: PCCAnalysisRequest) -> Dict[str, Any]:
+            """
+            Analyze post-call compliance based on call transcript and compliance results
+            """
+            try:
+                print("Starting PCC analysis...")
+                
+                # Prepare data for LLM analysis
+                analysis_data = {
+                    "compliance_results": request.compliance_results or {},
+                    "transcript": request.transcript or {}
+                }
+                
+                # Call LLM for PCC analysis
+                pcc_result = self.call_llm_for_pcc_analysis(analysis_data)
+                
+                print("PCC analysis complete")
+                return pcc_result
+                
+            except Exception as e:
+                print(f"PCC analysis failed: {e}")
+                return {
+                    "pcc_verdict": "manual_review",
+                    "pcc_reason": f"Analysis failed: {str(e)}",
+                    "confidence_score": 0.0,
+                    "compliance_score": 0,
+                    "call_insights": {
+                        "clarifications_received": [],
+                        "concerns_addressed": False,
+                        "additional_flags": ["Analysis error"]
+                    },
+                    "confidence_while_answering": 0,
+                    "truth_level": 0,
+                    "recommendation": "further_review",
+                    "analysis_timestamp": datetime.now().isoformat()
+                }
+
+    def generate_comprehensive_report(self, request: GenerateReportRequest) -> Dict[str, Any]:
+        """
+        Generate comprehensive compliance report
+        """
+        try:
+            print("Starting comprehensive report generation...")
+            
+            # Prepare data for report generation
+            report_data = {
+                "compliance_results": request.compliance_results,
+                "raw_output": request.raw_output,
+                "pcc_analysis": request.pcc_analysis,
+                "user_data": request.user_data,
+                "ad_details": request.ad_details
+            }
+            
+            # Call LLM for report generation
+            report_result = self.call_llm_for_report_generation(report_data)
+            
+            print("Comprehensive report generation complete")
+            return report_result
+            
+        except Exception as e:
+            print(f"Report generation failed: {e}")
+            return {
+                "executive_summary": {
+                    "overall_status": "Error",
+                    "risk_level": "High",
+                    "recommendation": "Manual review required",
+                    "error": str(e)
+                },
+                "detailed_analysis": {
+                    "error": f"Report generation failed: {str(e)}"
+                },
+                "recommendations": ["Manual review required due to system error"],
+                "compliance_status": "error",
+                "generated_at": datetime.now().isoformat()
+            }
+
+    def call_llm_for_pcc_analysis(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Call LLM for post-call compliance analysis
+        """
+        transcript_data = analysis_data.get("transcript", {})
+        
+        prompt = f"""
+You are an expert post-call compliance analyst. Analyze the following call transcript and compliance results to determine the final compliance verdict.
+
+Compliance Results: {json.dumps(analysis_data.get("compliance_results", {}), default=str, indent=2)}
+Call Transcript Data: {json.dumps(transcript_data, default=str, indent=2)}
+
+Based on the call transcript and original compliance results, provide a comprehensive post-call analysis.
+
+Consider:
+1. Did the call clarify any ambiguous compliance issues?
+2. Were advertiser explanations satisfactory?
+3. Did new information emerge that changes the compliance assessment?
+4. How confident and truthful were the advertiser's responses?
+5. Are there any red flags or concerns from the conversation?
+
+Respond ONLY with valid JSON in this exact format:
+{{
+    "pcc_verdict": "pass" | "fail" | "manual_review",
+    "pcc_reason": "Detailed analysis reason based on call insights and original compliance results",
+    "confidence_score": 0.0-1.0,
+    "compliance_score": 0-100,
+    "call_insights": {{
+        "clarifications_received": ["specific clarification 1", "specific clarification 2"],
+        "concerns_addressed": true/false,
+        "additional_flags": ["flag1", "flag2"] or []
+    }},
+    "confidence_while_answering": 0-100,
+    "truth_level": 0-100,
+    "recommendation": "approve" | "reject" | "further_review",
+    "analysis_timestamp": "{datetime.now().isoformat()}"
+}}
+
+Rules:
+- If call resolved compliance issues satisfactorily => "pass"
+- If call revealed more concerns or unsatisfactory answers => "fail"  
+- If inconclusive or need more information => "manual_review"
+- Base confidence_score on how well the call addressed original concerns
+- Rate truth_level based on consistency and believability of responses
+- Rate confidence_while_answering based on how confidently the advertiser responded
+"""
+        
+        try:
+            response = call_llm_gemini(prompt, "You are an expert post-call compliance analyst. Always respond with valid JSON only.", 1500)
+            return json.loads(response)
+        except Exception as e:
+            print(f"LLM PCC analysis failed: {e}")
+            raise Exception(f"PCC analysis failed: {str(e)}")
+
+    def call_llm_for_report_generation(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
+        pcc_analysis = report_data.get('pcc_analysis')
+        has_call_analysis = pcc_analysis is not None
+        
+        if has_call_analysis:
+            # CASE 1: WITH CALL ANALYSIS
+            prompt = f"""
+    You are an expert compliance report generator for post-call analysis.
+
+    SCENARIO: A compliance call was conducted after initial automated analysis.
+
+    Original Compliance Results: {json.dumps(report_data.get('compliance_results', {}), default=str)}
+    Call Analysis Results: {json.dumps(pcc_analysis, default=str)}
+
+    FOCUS: Show how the call changed or confirmed the original automated decision.
+    - What failed in original analysis?
+    - How did the call clarify or resolve issues?
+    - Why did the verdict change (or stay the same)?
+    - What specific insights from the call influenced the final decision?
+
+    Original verdict: {report_data.get('compliance_results', {}).get('verdict', 'unknown')}
+    Post-call verdict: {pcc_analysis.get('pcc_verdict', 'unknown')}
+            """
+        else:
+            # CASE 2: NO CALL ANALYSIS  
+            prompt = f"""
+    You are an expert compliance report generator for automated analysis.
+
+    SCENARIO: Direct automated compliance analysis without human call intervention.
+
+    Compliance Results: {json.dumps(report_data.get('compliance_results', {}), default=str)}
+    Raw Analysis Output: {json.dumps(report_data.get('raw_output', {}), default=str)}
+
+    FOCUS: Comprehensive report based solely on automated analysis.
+    - No call was conducted
+    - Decision based on AI analysis only
+    - Leave call-related fields empty but present
+            """
+        
+        # COMMON SCHEMA - ADD TO BOTH PROMPTS
+        prompt += f"""
+
+    Respond ONLY with valid JSON in this exact format:
+    {{
+        "executive_summary": {{
+            "overall_status": "Compliant" | "Non-Compliant" | "Requires Review",
+            "risk_level": "Low" | "Medium" | "High", 
+            "key_findings": ["finding1", "finding2"],
+            "recommendation": "Brief executive recommendation",
+            "compliance_percentage": 0-100,
+            "call_conducted": {str(has_call_analysis).lower()},
+            "final_decision_basis": "{"post_call_analysis" if has_call_analysis else "automated_analysis"}"
+        }},
+        "detailed_analysis": {{
+            "original_compliance": {{
+                "automated_verdict": "pass/fail/review",
+                "key_violations": ["violation1", "violation2"],
+                "risk_factors": ["factor1", "factor2"]
+            }},
+            "call_analysis": {{
+                "call_verdict": "{"pass/fail/manual_review" if has_call_analysis else ""}",
+                "clarifications_provided": [],
+                "concerns_addressed": {str(pcc_analysis.get('call_insights', {}).get('concerns_addressed', False)).lower() if has_call_analysis else "false"},
+                "confidence_level": {pcc_analysis.get('confidence_while_answering', 0) if has_call_analysis else 0},
+                "truth_assessment": {pcc_analysis.get('truth_level', 0) if has_call_analysis else 0}
+            }},
+            "decision_reconciliation": {{
+                "original_vs_final": "explanation",
+                "key_changes": [],
+                "reasoning": "detailed explanation"
+            }}
+        }},
+        "recommendations": ["rec1", "rec2"],
+        "compliance_status": "approved" | "rejected" | "pending_review", 
+        "generated_at": "{datetime.now().isoformat()}"
+    }}
+    """
+        
+        try:
+            response = call_llm_gemini(prompt, "You are an expert compliance report generator. Always respond with valid JSON only.", 2000)
+            return json.loads(response)
+        except Exception as e:
+            print(f"LLM report generation failed: {e}")
+            raise Exception(f"Report generation failed: {str(e)}")
+        
+
