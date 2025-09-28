@@ -33,3 +33,16 @@ export const complianceEndpoints = {
   APPROVE_ADVERTISEMENT: { e: BaseURL + 'ads/approve', t: 'POST' }, // + /:analysisResultsId
   REJECT_ADVERTISEMENT: { e: BaseURL + 'ads/reject', t: 'POST' }, // + /:analysisResultsId
 };
+
+export const dashboardEndpoints = {
+  // Admin endpoints
+  ADMIN_STATS: { e: BaseURL + 'admin/stats', t: 'GET' },
+  ADMIN_OVERVIEW: { e: BaseURL + 'admin/overview', t: 'GET' },
+  ADMIN_ADS: { e: BaseURL + 'admin/ads', t: 'GET' },
+  
+  // User dashboard endpoints
+  USER_OVERVIEW: { e: BaseURL + 'dashboard/user/overview', t: 'GET' },
+  USER_ADS: { e: BaseURL + 'dashboard/user/ads', t: 'GET' },
+  USER_NOTIFICATIONS: { e: BaseURL + 'dashboard/user/notifications', t: 'GET' },
+  MARK_NOTIFICATION_READ: { e: BaseURL + 'dashboard/user/notifications', t: 'PUT' }, // + /:notification_id/read
+};

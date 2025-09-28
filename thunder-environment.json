@@ -1,0 +1,28 @@
+{
+  "client": "Thunder Client",
+  "environmentName": "AdGuard Local",
+  "dateExported": "2025-01-24T00:00:00.000Z",
+  "version": "1.0",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "name": "userToken",
+      "value": "YOUR_USER_TOKEN_HERE"
+    },
+    {
+      "name": "adminToken",
+      "value": "YOUR_ADMIN_TOKEN_HERE"
+    },
+    {
+      "name": "adId",
+      "value": "SAMPLE_AD_ID"
+    },
+    {
+      "name": "notificationId",
+      "value": "SAMPLE_NOTIFICATION_ID"
+    }
+  ]
+}

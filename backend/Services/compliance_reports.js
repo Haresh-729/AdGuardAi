@@ -53,7 +53,8 @@ const getAllReports = async () => {
         approved_by_user:approved_by (
           name,
           email
-        )
+        ),
+        media:media_id (public_url)
       `)
       .order("created_at", { ascending: false });
 

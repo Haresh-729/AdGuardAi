@@ -1,0 +1,280 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "AdGuard API Tests",
+  "dateExported": "2025-01-24T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "dashboard-folder",
+      "name": "Dashboard Routes",
+      "containerId": "",
+      "created": "2025-01-24T00:00:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "admin-folder",
+      "name": "Admin Routes",
+      "containerId": "",
+      "created": "2025-01-24T00:00:00.000Z",
+      "sortNum": 20000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "health-check",
+      "colId": "adguard-collection",
+      "containerId": "",
+      "name": "Health Check",
+      "url": "http://localhost:3000/api/health",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "login",
+      "colId": "adguard-collection",
+      "containerId": "",
+      "name": "Login",
+      "url": "http://localhost:3000/api/auth/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "dashboard-overview",
+      "colId": "adguard-collection",
+      "containerId": "dashboard-folder",
+      "name": "User Dashboard Overview",
+      "url": "http://localhost:3000/api/dashboard/user/overview",
+      "method": "GET",
+      "sortNum": 30000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "user-ads",
+      "colId": "adguard-collection",
+      "containerId": "dashboard-folder",
+      "name": "User Ads List",
+      "url": "http://localhost:3000/api/dashboard/user/ads",
+      "method": "GET",
+      "sortNum": 40000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "user-ad-details",
+      "colId": "adguard-collection",
+      "containerId": "dashboard-folder",
+      "name": "User Ad Details",
+      "url": "http://localhost:3000/api/dashboard/user/ads/{{adId}}",
+      "method": "GET",
+      "sortNum": 50000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "user-notifications",
+      "colId": "adguard-collection",
+      "containerId": "dashboard-folder",
+      "name": "User Notifications",
+      "url": "http://localhost:3000/api/dashboard/user/notifications",
+      "method": "GET",
+      "sortNum": 60000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "mark-notification-read",
+      "colId": "adguard-collection",
+      "containerId": "dashboard-folder",
+      "name": "Mark Notification Read",
+      "url": "http://localhost:3000/api/dashboard/user/notifications/{{notificationId}}/read",
+      "method": "PATCH",
+      "sortNum": 70000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "admin-overview",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Admin Dashboard Overview",
+      "url": "http://localhost:3000/api/admin/overview",
+      "method": "GET",
+      "sortNum": 80000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "admin-all-ads",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Get All Ads (Admin)",
+      "url": "http://localhost:3000/api/admin/ads",
+      "method": "GET",
+      "sortNum": 90000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "admin-ad-details",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Get Ad Details (Admin)",
+      "url": "http://localhost:3000/api/admin/ads/{{adId}}",
+      "method": "GET",
+      "sortNum": 100000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "admin-update-status",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Update Ad Status (Admin)",
+      "url": "http://localhost:3000/api/admin/ads/{{adId}}/status",
+      "method": "PATCH",
+      "sortNum": 110000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"verdict\": \"approved\",\n  \"reason\": \"Advertisement meets all compliance requirements\",\n  \"status\": 6\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "admin-all-users",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Get All Users (Admin)",
+      "url": "http://localhost:3000/api/admin/users",
+      "method": "GET",
+      "sortNum": 120000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "admin-system-stats",
+      "colId": "adguard-collection",
+      "containerId": "admin-folder",
+      "name": "Get System Stats (Admin)",
+      "url": "http://localhost:3000/api/admin/stats",
+      "method": "GET",
+      "sortNum": 130000,
+      "created": "2025-01-24T00:00:00.000Z",
+      "modified": "2025-01-24T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    }
+  ]
+}
