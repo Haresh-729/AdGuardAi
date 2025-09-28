@@ -1,4 +1,5 @@
 const complianceService = require('../Services/compliance');
+const complianceReportsService = require('../Services/compliance_reports');
 
 const uploadAd = async (req, res) => {
   try {
@@ -87,7 +88,113 @@ const getAdStatus = async (req, res) => {
   }
 };
 
+
+const getUserReports = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const reports = await complianceReportsService.getUserReports(userId);
+    
+    res.status(200).json({
+      success: true,
+      reports
+    });
+  } catch (error) {
+    console.error('Error in getUserReports controller:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const getAllReports = async (req, res) => {
+  try {
+    const reports = await complianceReportsService.getAllReports();
+    
+    res.status(200).json({
+      success: true,
+      reports
+    });
+  } catch (error) {
+    console.error('Error in getAllReports controller:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const approveAdvertisement = async (req, res) => {
+  try {
+    const { analysisResultsId } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user.id;
+
+    if (!analysisResultsId || isNaN(analysisResultsId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid analysis results ID is required'
+      });
+    }
+
+    const result = await complianceReportsService.approveAdvertisement(
+      analysisResultsId, 
+      adminId, 
+      reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Advertisement approved successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error in approveAdvertisement controller:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const rejectAdvertisement = async (req, res) => {
+  try {
+    const { analysisResultsId } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user.id;
+
+    if (!analysisResultsId || isNaN(analysisResultsId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid analysis results ID is required'
+      });
+    }
+
+    const result = await complianceReportsService.rejectAdvertisement(
+      analysisResultsId, 
+      adminId, 
+      reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Advertisement rejected successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error in rejectAdvertisement controller:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   uploadAd,
-  getAdStatus
+  getAdStatus,
+  getUserReports,
+  getAllReports,
+  approveAdvertisement,
+  rejectAdvertisement
 };

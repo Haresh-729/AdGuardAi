@@ -53,7 +53,7 @@ export function login(email, password, navigate) {
           uemail: response.data.user.email,
           token: response.data.token,
           profile_url: response.data.user.profile_url,
-          role: "user", // Default role, adjust based on your needs
+          role: response.data.user?.role || "user", // Default role, adjust based on your needs
           role_id: 1, // Default role_id, adjust based on your needs
           is_new: response.data.isFirstTime
         };

@@ -28,4 +28,8 @@ export const accountEndpoints = {
 export const complianceEndpoints = {
   UPLOAD_AD: { e: BaseURL + 'ads/upload', t: 'POST' },
   GET_AD_STATUS: { e: BaseURL + 'ads', t: 'GET' }, // will append /{adId}/status
+   GET_USER_REPORTS: { e: BaseURL + 'ads/my-reports', t: 'GET' },
+  GET_ALL_REPORTS: { e: BaseURL + 'ads/all-reports', t: 'GET' },
+  APPROVE_ADVERTISEMENT: { e: BaseURL + 'ads/approve', t: 'POST' }, // + /:analysisResultsId
+  REJECT_ADVERTISEMENT: { e: BaseURL + 'ads/reject', t: 'POST' }, // + /:analysisResultsId
 };

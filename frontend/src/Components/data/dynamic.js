@@ -1,4 +1,4 @@
-import { Boxes, HomeIcon, FileStack, Calendar1, Upload } from 'lucide-react';
+import { Boxes, HomeIcon, ChartColumnStacked, Upload } from 'lucide-react';
 
 const features = [
   {
@@ -13,6 +13,13 @@ const features = [
     displayName: 'Upload',
     logoUsed: Upload,
     route: '/add-upload',
+    allowedRoles: ["user", "admin"],
+  },
+  {
+    featureName: 'Reports',
+    displayName: 'Reports',
+    logoUsed: ChartColumnStacked,
+    route: '/reports',
     allowedRoles: ["user", "admin"],
   },
 ];
