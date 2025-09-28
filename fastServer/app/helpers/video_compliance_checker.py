@@ -7,12 +7,13 @@ from datetime import datetime
 from typing import Union, List, Dict, Any, Optional
 import subprocess
 import tempfile
+import av
 
 class VideoComplianceChecker:
     def __init__(self, 
                  image_checker=None,
                  audio_checker=None,
-                 max_frames_per_video=20,
+                 max_frames_per_video=3,
                  sampling_strategy="adaptive",
                  include_audio_analysis=True):
         
@@ -28,10 +29,12 @@ class VideoComplianceChecker:
         print(f"Audio analysis: {'Enabled' if self.include_audio_analysis else 'Disabled'}")
     
     def extract_audio_from_video(self, video_path: str, temp_dir: str = None) -> str:
+        """Extract audio from video using PyAV - corrected version"""
         if not self.include_audio_analysis:
             raise Exception("Audio analysis not enabled")
         
         try:
+            
             if temp_dir is None:
                 temp_dir = tempfile.gettempdir()
             
@@ -40,38 +43,77 @@ class VideoComplianceChecker:
             
             print(f"Extracting audio from video: {os.path.basename(video_path)}")
             
-            ffmpeg_cmd = [
-                'ffmpeg', '-i', video_path,
-                '-vn',
-                '-acodec', 'pcm_s16le',
-                '-ar', '16000',
-                '-ac', '1',
-                '-y',
-                audio_path
-            ]
+            # Open input
+            input_container = av.open(video_path)
             
-            result = subprocess.run(
-                ffmpeg_cmd, 
-                capture_output=True, 
-                text=True,
-                timeout=300
+            # Find audio stream
+            audio_stream = None
+            for stream in input_container.streams:
+                if stream.type == 'audio':
+                    audio_stream = stream
+                    break
+            
+            if audio_stream is None:
+                input_container.close()
+                raise Exception("No audio stream found in video")
+            
+            # Open output
+            output_container = av.open(audio_path, mode='w')
+            output_stream = output_container.add_stream('pcm_s16le', rate=16000, layout='mono')
+            
+            # Create resampler
+            resampler = av.AudioResampler(
+                format='s16',
+                layout='mono',
+                rate=16000
             )
             
-            if result.returncode != 0:
-                raise Exception(f"FFmpeg failed: {result.stderr}")
+            # Process frames
+            for frame in input_container.decode(audio_stream):
+                # Use the resampler correctly
+                resampled_frames = resampler.resample(frame)
+                
+                for resampled_frame in resampled_frames:
+                    # Encode the resampled frame
+                    for packet in output_stream.encode(resampled_frame):
+                        output_container.mux(packet)
             
+            # Flush encoder
+            for packet in output_stream.encode():
+                output_container.mux(packet)
+            
+            # Close containers
+            output_container.close()
+            input_container.close()
+            
+            # Verify output
             if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
                 raise Exception("Audio extraction produced empty file")
             
-            print(f"Audio extracted: {os.path.basename(audio_path)}")
+            print(f"Audio extracted successfully: {os.path.basename(audio_path)}")
             return audio_path
             
-        except subprocess.TimeoutExpired:
-            raise Exception("Audio extraction timed out")
-        except FileNotFoundError:
-            raise Exception("FFmpeg not found. Please install FFmpeg for audio analysis.")
+        except ImportError:
+            raise Exception("PyAV not installed. Run: pip install av")
         except Exception as e:
+            print(f"PyAV extraction failed: {e}")
             raise Exception(f"Audio extraction failed: {e}")
+    
+    def test_audio_extraction(self, video_path: str) -> bool:
+        """Test audio extraction function independently"""
+        try:
+            audio_path = self.extract_audio_from_video(video_path)
+            print(f"SUCCESS: Audio extracted to {audio_path}")
+            print(f"File size: {os.path.getsize(audio_path)} bytes")
+            
+            # Cleanup test file
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+                
+            return True
+        except Exception as e:
+            print(f"FAILED: {e}")
+            return False
     
     def analyze_video_audio(self, video_path: str) -> Dict[str, Any]:
         if not self.include_audio_analysis or not self.audio_checker:

@@ -36,8 +36,9 @@ const uploadAdvertisement = async (adData, files) => {
 
     const advertisementId = advertisement.advertisement_id;
 
-    // Sequential processing - await the entire flow
-    await asyncProcessExecutor(advertisementId, adData, files);
+    asyncProcessExecutor(advertisementId, adData, files).catch(error => {
+        console.error("Unhandled error in asyncProcessExecutor:", error);
+    });
 
     return { advertisement_id: advertisementId };
   } catch (error) {
@@ -49,9 +50,8 @@ const uploadAdvertisement = async (adData, files) => {
 const asyncProcessExecutor = async (advertisementId, adData, files) => {
   try {
     if (!adData.user_id || !advertisementId) {
-      throw new Error("Missing required advertisement data");
+    throw new Error("Missing required advertisement data");
     }
-
     // 2. Create Analysis Result Entry
     const { data: analysisResultsData, error: analysisError } = await supabase
       .from(analysisResultsTable)
@@ -87,9 +87,9 @@ const asyncProcessExecutor = async (advertisementId, adData, files) => {
     );
 
     // 5. Update Analysis Result Status
-    // await updateAnalysisStatus(advertisementId, 1, {
-    //   upload_completed: new Date().toISOString(),
-    // });
+    await updateAnalysisStatus(advertisementId, 1, {
+      upload_completed: new Date().toISOString(),
+    });
 
     // 6. Create Success Notification
     await createNotification(
@@ -122,52 +122,36 @@ const asyncProcessExecutor = async (advertisementId, adData, files) => {
       .eq("advertisement_id", advertisementId);
 
     // 9. Decision based on verdict
-    const verdict = complianceResult.compliance_results.verdict;
-    const makeCall = complianceResult.compliance_results.make_call;
+    if (
+      complianceResult.compliance_results.verdict === "clarification_needed"
+    ) {
+      await updateAnalysisStatus(advertisementId, 2, {
+        compliance_completed: new Date().toISOString(),
+      });
 
-    if (verdict === "clarification_needed" && makeCall === true) {
       await createNotification(
         adData.user_id,
         "call_scheduled",
         "Your ad requires clarification. A compliance call has been scheduled."
       );
 
-      // Sequential call process
+      // ONLY call scheduleComplianceCall - remove all other manual calls
       await scheduleComplianceCall(
         advertisementId,
         analysisResultsId,
         complianceResult.compliance_results.queries_for_call
       );
-
-      await waitForCallCompletion(advertisementId);
-      await fetchCallTranscript(advertisementId);
-      const postCallResult = await postCallCompliance(advertisementId);
-      await generateComplianceReport(
-        advertisementId,
-        complianceResult.compliance_results,
-        postCallResult
-      );
     } else if (
-      verdict === "pass" ||
-      verdict === "fail" ||
-      verdict === "manual_review"
+      complianceResult.compliance_results.verdict === "pass" ||
+      complianceResult.compliance_results.verdict === "fail"
     ) {
       // Direct to report generation
-      await generateComplianceReport(
+      await updateAnalysisStatus(
         advertisementId,
-        complianceResult.compliance_results
-      );
-    } else if (
-      complianceResult.compliance_results.verdict === "manual_review"
-    ) {
-      // await updateAnalysisStatus(advertisementId, 6, {
-      //   compliance_completed: new Date().toISOString(),
-      // });
-
-      await createNotification(
-        adData.user_id,
-        "manual_review",
-        "Your ad requires manual review by our compliance team."
+        complianceResult.compliance_results.verdict === "pass" ? 1 : 2,
+        {
+          compliance_completed: new Date().toISOString(),
+        }
       );
 
       await generateComplianceReport(
@@ -175,15 +159,13 @@ const asyncProcessExecutor = async (advertisementId, adData, files) => {
         complianceResult.compliance_results
       );
     }
-
-    console.log(`Processing completed for advertisement ${advertisementId}`);
   } catch (error) {
     console.error("Error in asyncProcessExecutor:", error);
 
     // Handle error case
-    // await updateAnalysisStatus(advertisementId, 6, {
-    //   error_occurred: new Date().toISOString(),
-    // });
+    await updateAnalysisStatus(advertisementId, 6, {
+      error_occurred: new Date().toISOString(),
+    });
 
     await supabase
       .from(analysisResultsTable)
@@ -236,13 +218,6 @@ const uploadMediaToSupabase = async (files, userId, advertisementId) => {
         mediaUrls.videos.push(publicUrlData.publicUrl);
       } else {
         mediaUrls.images.push(publicUrlData.publicUrl);
-      }
-
-      // Cleanup local file
-      try {
-        fs.unlinkSync(file.path);
-      } catch (cleanupError) {
-        console.error("Failed to cleanup file:", cleanupError);
       }
     }
 
@@ -321,7 +296,6 @@ const updateAnalysisStatus = async (
         .eq("advertisement_id", advertisementId);
 
       if (error) throw error;
-      return; // success
     } catch (error) {
       if (i === maxRetries - 1) throw error;
       await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
@@ -353,9 +327,9 @@ const triggerComplianceCheck = async (
   analysisResultsId
 ) => {
   try {
-    // await updateAnalysisStatus(advertisementId, 1, {
-    //   compliance_started: new Date().toISOString(),
-    // });
+    await updateAnalysisStatus(advertisementId, 1, {
+      compliance_started: new Date().toISOString(),
+    });
 
     const { data: userData, error: userError } = await supabase
       .from("users")
@@ -423,17 +397,8 @@ const handleComplianceResult = async (rawOutput, advertisementId) => {
         },
       };
     }
-    if (rawOutput.compliance_results) {
-      return {
-        raw_output: rawOutput,
-        compliance_results: {
-          ...rawOutput.compliance_results,
-          advertisement_id: advertisementId, // Ensure advertisement_id is set
-        },
-      };
-    }
 
-    // FALLBACK: Old logic for backward compatibility
+    // 1. Extract modality-specific results
     const modalityResults = {
       text: extractModalityResult(rawOutput.text_op),
       image: extractModalityResult(rawOutput.image_op),
@@ -441,8 +406,9 @@ const handleComplianceResult = async (rawOutput, advertisementId) => {
       video: extractModalityResult(rawOutput.video_op),
       link: extractModalityResult(rawOutput.link_op),
     };
-    // // 2. Call LLM for final decision
-    // const llmAnalysis = await callLLMForCompliance(rawOutput, modalityResults);
+
+    // 2. Call LLM for final decision
+    const llmAnalysis = await callLLMForCompliance(rawOutput, modalityResults);
 
     // 3. Aggregate risk score (max of all modality risk scores)
     const riskScore = Math.max(
@@ -454,10 +420,10 @@ const handleComplianceResult = async (rawOutput, advertisementId) => {
     );
 
     // 4. Generate queries for call if clarification needed
-    // let queriesForCall = [];
-    // if (llmAnalysis.verdict === "clarification_needed") {
-    //   queriesForCall = await generateQueriesForCall(rawOutput, modalityResults);
-    // }
+    let queriesForCall = [];
+    if (llmAnalysis.verdict === "clarification_needed") {
+      queriesForCall = await generateQueriesForCall(rawOutput, modalityResults);
+    }
 
     // 5. Return structured result
     return {
@@ -515,11 +481,11 @@ const scheduleComplianceCall = async (
 
     if (callLogError) throw callLogError;
 
-    // await updateAnalysisStatus(advertisementId, 3, {
-    //   call_scheduled: new Date().toISOString(),
-    // });
+    await updateAnalysisStatus(advertisementId, 3, {
+      call_scheduled: new Date().toISOString(),
+    });
 
-    // Make the compliance call
+    // PASS queries to makeComplianceCall:
     await makeComplianceCall(
       adData.users.mobile,
       adData.users.name,
@@ -528,7 +494,6 @@ const scheduleComplianceCall = async (
     );
   } catch (error) {
     console.error("Error scheduling compliance call:", error);
-    throw error;
   }
 };
 
@@ -567,7 +532,7 @@ Please conduct a brief compliance verification call.`;
       model: "enhanced",
       language: "en",
       voice: "d9559963-d372-42c0-b753-30f28b75e1ef",
-      max_duration: 3,
+      max_duration: 3, // 5 minutes
       answered_by_enabled: true,
       wait_for_greeting: false,
       record: true,
@@ -595,11 +560,11 @@ Please conduct a brief compliance verification call.`;
 
     console.log("Call initiated:", callResult);
 
-    return callResult;
+    pollCallStatus(callResult.call_id, adDetails.advertisement_id);
   } catch (error) {
     console.error("Error making compliance call:", error);
 
-    // Mark call as failed
+    // Mark call as failed and continue to report generation
     await supabase
       .from(callLogsTable)
       .update({
@@ -608,97 +573,34 @@ Please conduct a brief compliance verification call.`;
       })
       .eq("advertisement_id", adDetails.advertisement_id);
 
-    throw error;
+    // Generate report with error status
+    await generateComplianceReport(adDetails.advertisement_id, {
+      verdict: "manual_review",
+      reason: "Call setup failed - manual review required",
+    });
   }
 };
 
-const waitForCallCompletion = async (advertisementId) => {
-  return new Promise(async (resolve, reject) => {
-    const AUTH_TOKEN = process.env.BLAND_AUTH_TOKEN;
-    let attempts = 0;
-    const maxAttempts = 60;
+const handleCallCompletion = async (advertisementId) => {
+  try {
+    await supabase
+      .from(callLogsTable)
+      .update({
+        status: 2,
+        execution_time: { call_completed: new Date().toISOString() },
+      })
+      .eq("advertisement_id", advertisementId);
 
-    const checkStatus = async () => {
-      try {
-        attempts++;
+    await updateAnalysisStatus(advertisementId, 4, {
+      call_completed: new Date().toISOString(),
+    });
 
-        // Get external call ID
-        const { data: callData } = await supabase
-          .from(callLogsTable)
-          .select("external_call_id")
-          .eq("advertisement_id", advertisementId)
-          .single();
-
-        if (!callData?.external_call_id) {
-          throw new Error("No call ID found");
-        }
-
-        const response = await fetch(
-          `https://api.bland.ai/v1/calls/${callData.external_call_id}`,
-          {
-            method: "GET",
-            headers: {
-              authorization: AUTH_TOKEN,
-            },
-          }
-        );
-
-        const callStatus = await response.json();
-
-        if (
-          callStatus.status === "completed" ||
-          callStatus.status === "ended"
-        ) {
-          console.log("Call completed");
-
-          // Update call status
-          await supabase
-            .from(callLogsTable)
-            .update({
-              status: 2,
-              execution_time: { call_completed: new Date().toISOString() },
-            })
-            .eq("advertisement_id", advertisementId);
-
-          // await updateAnalysisStatus(advertisementId, 4, {
-          //   call_completed: new Date().toISOString(),
-          // });
-
-          resolve();
-          return;
-        }
-
-        if (attempts >= maxAttempts) {
-          console.log("Call polling timeout");
-
-          // Mark as completed anyway
-          await supabase
-            .from(callLogsTable)
-            .update({
-              status: 2,
-              execution_time: { call_timeout: new Date().toISOString() },
-            })
-            .eq("advertisement_id", advertisementId);
-
-          resolve();
-          return;
-        }
-
-        // Continue polling
-        setTimeout(checkStatus, 10000);
-      } catch (error) {
-        console.error("Error polling call status:", error);
-        if (attempts >= maxAttempts) {
-          resolve(); // Don't fail the entire process
-        } else {
-          setTimeout(checkStatus, 5000);
-        }
-      }
-    };
-
-    // Start polling after 10 seconds
-    setTimeout(checkStatus, 10000);
-  });
+    setTimeout(async () => {
+      await fetchCallTranscript(advertisementId);
+    }, 240000);
+  } catch (error) {
+    console.error("Error handling call completion:", error);
+  }
 };
 
 const fetchCallTranscript = async (advertisementId) => {
@@ -715,9 +617,6 @@ const fetchCallTranscript = async (advertisementId) => {
     if (!callData?.external_call_id) {
       throw new Error("No call ID found");
     }
-
-    // Wait a bit for transcript to be ready
-    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     // Fetch transcript from Bland AI
     const response = await fetch(
@@ -740,17 +639,16 @@ const fetchCallTranscript = async (advertisementId) => {
       })
       .eq("advertisement_id", advertisementId);
 
-    return transcriptData;
+    await postCallCompliance(advertisementId, transcriptData);
   } catch (error) {
     console.error("Error fetching call transcript:", error);
-    return null;
   }
 };
 
-const postCallCompliance = async (advertisementId) => {
+const postCallCompliance = async (advertisementId, transcript) => {
   try {
     console.log(
-      `Running post-call compliance for advertisement ${advertisementId}`
+      `Template: Running post-call compliance for advertisement ${advertisementId}`
     );
 
     const { data: adData, error } = await supabase
@@ -761,14 +659,6 @@ const postCallCompliance = async (advertisementId) => {
 
     if (error) throw error;
 
-    // Get transcript data
-    const { data: callData } = await supabase
-      .from(callLogsTable)
-      .select("transcript")
-      .eq("advertisement_id", advertisementId)
-      .single();
-
-    // For now, using mock result - can be replaced with actual LLM analysis
     const mockResult = {
       verdict: "pass",
       reason: "Post-call analysis completed",
@@ -780,18 +670,26 @@ const postCallCompliance = async (advertisementId) => {
       .update({
         verdict: mockResult.verdict,
         reason: mockResult.reason,
-        // status: 5,
+        status: 5,
       })
       .eq("advertisement_id", advertisementId);
 
-    return mockResult;
+    const { data: analysisData } = await supabase
+      .from(analysisResultsTable)
+      .select("*")
+      .eq("advertisement_id", advertisementId)
+      .single();
+
+    const initialComplianceResult =
+      analysisData.report_data?.compliance_details || {};
+
+    await generateComplianceReport(
+      advertisementId,
+      initialComplianceResult,
+      mockResult
+    );
   } catch (error) {
     console.error("Error in post-call compliance:", error);
-    return {
-      verdict: "manual_review",
-      reason: "Post-call analysis failed",
-      confidence: 0.0,
-    };
   }
 };
 
@@ -801,13 +699,6 @@ const generateComplianceReport = async (
   postCallResult = null
 ) => {
   try {
-    if (!complianceResult || typeof complianceResult !== "object") {
-      complianceResult = {
-        verdict: "error",
-        reason: "Invalid compliance data",
-      };
-    }
-
     const { data: adData, error } = await supabase
       .from(advertisementTable)
       .select("*, users(*)")
@@ -874,17 +765,15 @@ const getAdvertisementStatus = async (advertisementId, userId) => {
       // Create default analysis entry if missing
       const { data: newEntry, error: insertError } = await supabase
         .from(analysisResultsTable)
-        .insert([
-          {
-            advertisement_id: advertisementId,
-            user_id: userId,
-            status: 0,
-            execution_time: {},
-          },
-        ])
+        .insert([{
+          advertisement_id: advertisementId,
+          user_id: userId,
+          status: 0,
+          execution_time: {}
+        }])
         .select("*")
         .single();
-
+        
       if (insertError) throw insertError;
       analysisData = newEntry;
     } else {
@@ -951,6 +840,51 @@ const getAdvertisementStatus = async (advertisementId, userId) => {
   }
 };
 
+const pollCallStatus = async (callId, advertisementId, maxAttempts = 60) => {
+  const AUTH_TOKEN = process.env.BLAND_AUTH_TOKEN;
+  let attempts = 0;
+
+  const checkStatus = async () => {
+    try {
+      attempts++;
+
+      const response = await fetch(`https://api.bland.ai/v1/calls/${callId}`, {
+        method: "GET",
+        headers: {
+          authorization: AUTH_TOKEN,
+        },
+      });
+
+      const callData = await response.json();
+
+      if (callData.status === "completed" || callData.status === "ended") {
+        console.log("Call completed, processing...");
+        await handleCallCompletion(advertisementId);
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        console.log("Call polling timeout, marking as completed");
+        await handleCallCompletion(advertisementId);
+        return;
+      }
+
+      // Continue polling every 10 seconds
+      setTimeout(checkStatus, 10000);
+    } catch (error) {
+      console.error("Error polling call status:", error);
+      if (attempts >= maxAttempts) {
+        await handleCallCompletion(advertisementId);
+      } else {
+        setTimeout(checkStatus, 5000);
+      }
+    }
+  };
+
+  // Start polling after 10 seconds
+  setTimeout(checkStatus, 300000);
+};
+
 const extractModalityResult = (modalityOutput) => {
   if (!modalityOutput) {
     return {
@@ -961,12 +895,7 @@ const extractModalityResult = (modalityOutput) => {
     };
   }
 
-  // NEW: Handle if modality data is already processed
-  if (modalityOutput.compliant !== undefined) {
-    return modalityOutput;
-  }
-
-  // OLD: Extract violations from the modality output (fallback)
+  // Extract violations from the modality output
   const violations = modalityOutput.violations || [];
   const compliant = violations.length === 0;
   const riskScore = modalityOutput.risk_score || 0.0;
@@ -985,278 +914,250 @@ const extractModalityResult = (modalityOutput) => {
   };
 };
 
-// const callLLMForCompliance = async (rawOutput, modalityResults) => {
-//   const timeout = new Promise((_, reject) =>
-//     setTimeout(() => reject(new Error("LLM call timeout")), 30000)
-//   );
+const callLLMForCompliance = async (rawOutput, modalityResults) => {
+  try {
+    const prompt = `
+You are an advertisement compliance expert. Analyze the following compliance check results and provide a final normalized decision JSON.
 
-//   try {
-//     const llmCall = async () => {
-//       const prompt = `
-// You are an advertisement compliance expert. Analyze the following compliance check results and provide a final normalized decision JSON.
+Raw Output: ${JSON.stringify(rawOutput, null, 2)}
 
-// Raw Output: ${JSON.stringify(rawOutput, null, 2)}
+Modality Results: ${JSON.stringify(modalityResults, null, 2)}
 
-// Modality Results: ${JSON.stringify(modalityResults, null, 2)}
+Respond ONLY with valid JSON in this exact format:
+{
+  "verdict": "pass" | "fail" | "manual_review" | "clarification_needed",
+  "reason": "One line summary explaining the decision",
+  "overall_risk_score": number,
+  "modalities_summary": {
+    "text": "short human-readable summary of text modality (max 1 line)",
+    "image": "short human-readable summary of image modality",
+    "audio": "short human-readable summary of audio modality",
+    "video": "short human-readable summary of video modality",
+    "link": "short human-readable summary of link modality"
+  }
+}
 
-// Respond ONLY with valid JSON in this exact format:
-// {
-//   "verdict": "pass" | "fail" | "manual_review" | "clarification_needed",
-//   "reason": "One line summary explaining the decision",
-//   "overall_risk_score": number,
-//   "modalities_summary": {
-//     "text": "short human-readable summary of text modality (max 1 line)",
-//     "image": "short human-readable summary of image modality",
-//     "audio": "short human-readable summary of audio modality",
-//     "video": "short human-readable summary of video modality",
-//     "link": "short human-readable summary of link modality"
-//   }
-// }
+Rules:
+- Do NOT restate violations or evidence from raw_output (already stored separately).
+- Summaries should be concise, single-line, and suitable for frontend display.
+- "overall_risk_score" can be the maximum or weighted average of modality risk_scores.
+- If all modalities are compliant => verdict = "pass".
+- If clear high-risk violations exist => verdict = "fail".
+- If ambiguous edge cases => verdict = "clarification_needed".
+- If errors or unusual inconsistencies => verdict = "manual_review".
+`;
 
-// Rules:
-// - Do NOT restate violations or evidence from raw_output (already stored separately).
-// - Summaries should be concise, single-line, and suitable for frontend display.
-// - "overall_risk_score" can be the maximum or weighted average of modality risk_scores.
-// - If all modalities are compliant => verdict = "pass".
-// - If clear high-risk violations exist => verdict = "fail".
-// - If ambiguous edge cases => verdict = "clarification_needed".
-// - If errors or unusual inconsistencies => verdict = "manual_review".
-// `;
+    const systemMessage =
+      "You are an advertisement compliance expert. Always respond with valid JSON only.";
+    const llmResponse = await callLLM(prompt, systemMessage, 1000);
 
-//       const systemMessage =
-//         "You are an advertisement compliance expert. Always respond with valid JSON only.";
-//       const llmResponse = await callLLM(prompt, systemMessage, 1000);
+    const parsedResponse = JSON.parse(llmResponse);
 
-//       const parsedResponse = JSON.parse(llmResponse);
+    // Validate required fields
+    if (!parsedResponse.verdict || !parsedResponse.reason) {
+      throw new Error("Invalid LLM response format");
+    }
 
-//       // Validate required fields
-//       if (!parsedResponse.verdict || !parsedResponse.reason) {
-//         throw new Error("Invalid LLM response format");
-//       }
+    return parsedResponse;
+  } catch (error) {
+    console.error("Error calling LLM for compliance:", error);
 
-//       return parsedResponse;
-//     };
+    // Fallback logic (same as before)
+    const hasViolations = Object.values(modalityResults).some(
+      (m) => !m.compliant
+    );
+    const highRisk = Object.values(modalityResults).some(
+      (m) => m.risk_score > 0.7
+    );
+    const maxRiskScore = Math.max(
+      ...Object.values(modalityResults).map((m) => m.risk_score)
+    );
 
-//     const llmResponse = await Promise.race([llmCall(), timeout]);
-//     return llmResponse;
-//   } catch (error) {
-//     console.error("Error calling LLM for compliance:", error);
+    if (!hasViolations) {
+      return {
+        verdict: "pass",
+        reason: "All content complies with advertising policies",
+        overall_risk_score: maxRiskScore,
+        modalities_summary: {
+          text: "No policy violations detected",
+          image: "Content appears compliant",
+          audio: "No issues found",
+          video: "Compliant content",
+          link: "Landing page appears safe",
+        },
+      };
+    } else if (highRisk) {
+      return {
+        verdict: "fail",
+        reason: "Significant policy violations detected",
+        overall_risk_score: maxRiskScore,
+        modalities_summary: {
+          text: "Policy violations found",
+          image: "Potentially non-compliant content",
+          audio: "Issues detected",
+          video: "Violations present",
+          link: "Landing page concerns",
+        },
+      };
+    } else {
+      return {
+        verdict: "manual_review",
+        reason: "Error in automated analysis - manual review required",
+        overall_risk_score: 0.5,
+        modalities_summary: {
+          text: "Analysis incomplete",
+          image: "Review required",
+          audio: "Manual check needed",
+          video: "Assessment pending",
+          link: "Verification needed",
+        },
+      };
+    }
+  }
+};
 
-//     // ADD specific handling for API key errors:
-//     if (
-//       error.message.includes("API key not valid") ||
-//       error.message.includes("API_KEY_INVALID")
-//     ) {
-//       console.error(
-//         "LLM API key is invalid. Please check your environment variables."
-//       );
-//     }
+const generateQueriesForCall = async (rawOutput, modalityResults) => {
+  try {
+    const prompt = `
+You are an advertisement compliance expert conducting a clarification call. Based on the compliance analysis results below, generate 3-5 strategic questions to ask the advertiser to get clarity on unclear or potentially problematic content.
 
-//     // Fallback logic
-//     const hasViolations = Object.values(modalityResults).some(
-//       (m) => !m.compliant
-//     );
-//     const highRisk = Object.values(modalityResults).some(
-//       (m) => m.risk_score > 0.7
-//     );
-//     const maxRiskScore = Math.max(
-//       ...Object.values(modalityResults).map((m) => m.risk_score)
-//     );
+Raw Compliance Output: ${JSON.stringify(rawOutput, null, 2)}
 
-//     if (!hasViolations) {
-//       return {
-//         verdict: "pass",
-//         reason: "All content complies with advertising policies",
-//         overall_risk_score: maxRiskScore,
-//         modalities_summary: {
-//           text: "No policy violations detected",
-//           image: "Content appears compliant",
-//           audio: "No issues found",
-//           video: "Compliant content",
-//           link: "Landing page appears safe",
-//         },
-//       };
-//     } else if (highRisk) {
-//       return {
-//         verdict: "fail",
-//         reason: "Significant policy violations detected",
-//         overall_risk_score: maxRiskScore,
-//         modalities_summary: {
-//           text: "Policy violations found",
-//           image: "Potentially non-compliant content",
-//           audio: "Issues detected",
-//           video: "Violations present",
-//           link: "Landing page concerns",
-//         },
-//       };
-//     } else {
-//       return {
-//         verdict: "manual_review",
-//         reason: "Error in automated analysis - manual review required",
-//         overall_risk_score: 0.5,
-//         modalities_summary: {
-//           text: "Analysis incomplete",
-//           image: "Review required",
-//           audio: "Manual check needed",
-//           video: "Assessment pending",
-//           link: "Verification needed",
-//         },
-//       };
-//     }
-//   }
-// };
+Modality Analysis: ${JSON.stringify(modalityResults, null, 2)}
 
-// const generateQueriesForCall = async (rawOutput, modalityResults) => {
-//   const timeout = new Promise((_, reject) =>
-//     setTimeout(() => reject(new Error("LLM call timeout")), 30000)
-//   );
+Generate questions that will help determine:
+1. The true intent behind ambiguous content
+2. Target audience clarification
+3. Verification of claims made in the ad
+4. Context behind flagged content
+5. Business model and compliance awareness
 
-//   try {
-//     const llmCall = async () => {
-//       const prompt = `
-// You are an advertisement compliance expert conducting a clarification call. Based on the compliance analysis results below, generate 3-5 strategic questions to ask the advertiser to get clarity on unclear or potentially problematic content.
+Respond ONLY with valid JSON in this exact format:
+[
+  {
+    "question": "Specific question to ask the advertiser",
+    "reason": "Why this question is important for compliance assessment"
+  },
+  {
+    "question": "Another strategic question",
+    "reason": "Reason for asking this question"
+  }
+]
 
-// Raw Compliance Output: ${JSON.stringify(rawOutput, null, 2)}
+Requirements:
+- Generate 3-5 questions maximum
+- Questions should be professional and non-accusatory
+- Focus on gathering context and intent, not just yes/no answers
+- Prioritize questions about the highest risk content found
+- Make questions conversational and natural for a phone call
+`;
 
-// Modality Analysis: ${JSON.stringify(modalityResults, null, 2)}
+    const systemMessage =
+      "You are an expert at conducting compliance clarification calls. Generate strategic questions that will reveal the true nature and intent of advertisement content.";
 
-// Generate questions that will help determine:
-// 1. The true intent behind ambiguous content
-// 2. Target audience clarification
-// 3. Verification of claims made in the ad
-// 4. Context behind flagged content
-// 5. Business model and compliance awareness
+    const llmResponse = await callLLM(prompt, systemMessage, 800);
+    const queries = JSON.parse(llmResponse);
 
-// Respond ONLY with valid JSON in this exact format:
-// [
-//   {
-//     "question": "Specific question to ask the advertiser",
-//     "reason": "Why this question is important for compliance assessment"
-//   },
-//   {
-//     "question": "Another strategic question",
-//     "reason": "Reason for asking this question"
-//   }
-// ]
+    // Validate response format
+    if (!Array.isArray(queries) || queries.length === 0) {
+      throw new Error("Invalid LLM response format for queries");
+    }
 
-// Requirements:
-// - Generate 3-5 questions maximum
-// - Questions should be professional and non-accusatory
-// - Focus on gathering context and intent, not just yes/no answers
-// - Prioritize questions about the highest risk content found
-// - Make questions conversational and natural for a phone call
-// `;
+    // Ensure each query has required fields
+    const validQueries = queries
+      .filter((q) => q.question && q.reason)
+      .slice(0, 5);
 
-//       const systemMessage =
-//         "You are an expert at conducting compliance clarification calls. Generate strategic questions that will reveal the true nature and intent of advertisement content.";
+    if (validQueries.length === 0) {
+      throw new Error("No valid queries generated");
+    }
 
-//       const llmResponse = await callLLM(prompt, systemMessage, 800);
-//       const queries = JSON.parse(llmResponse);
+    return validQueries;
+  } catch (error) {
+    console.error("Error generating queries with LLM:", error);
 
-//       // Validate response format
-//       if (!Array.isArray(queries) || queries.length === 0) {
-//         throw new Error("Invalid LLM response format for queries");
-//       }
+    // Fallback to default questions
+    const fallbackQueries = [
+      {
+        question:
+          "Can you explain the main message and target audience for this advertisement?",
+        reason:
+          "Understanding intent and audience helps assess compliance context",
+      },
+      {
+        question:
+          "What specific claims are you making about your product or service?",
+        reason: "Verifying accuracy and substantiation of advertising claims",
+      },
+      {
+        question:
+          "How do you ensure your advertising content meets industry standards?",
+        reason: "Assessing advertiser's compliance awareness and processes",
+      },
+    ];
 
-//       // Ensure each query has required fields
-//       const validQueries = queries
-//         .filter((q) => q.question && q.reason)
-//         .slice(0, 5);
+    // Add specific questions based on violations found
+    Object.entries(modalityResults).forEach(([modality, result]) => {
+      if (result.violations.length > 0) {
+        fallbackQueries.push({
+          question: `Can you provide more context about the ${modality} content in your advertisement?`,
+          reason: `Clarification needed for potential ${modality} compliance issues`,
+        });
+      }
+    });
 
-//       if (validQueries.length === 0) {
-//         throw new Error("No valid queries generated");
-//       }
+    return fallbackQueries.slice(0, 5);
+  }
+};
 
-//       return validQueries;
-//     };
+const callLLM = async (
+  prompt,
+  systemMessage = "You are a helpful AI assistant.",
+  maxTokens = 1000
+) => {
+  try {
+    const isGemini = process.env.USE_GEMINI === "true";
+    let llmResponse;
 
-//     const llmResponse = await Promise.race([llmCall(), timeout]);
-//     return llmResponse;
-//   } catch (error) {
-//     console.error("Error generating queries with LLM:", error);
+    if (isGemini) {
+      // Gemini API call
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-//     // Fallback to default questions
-//     const fallbackQueries = [
-//       {
-//         question:
-//           "Can you explain the main message and target audience for this advertisement?",
-//         reason:
-//           "Understanding intent and audience helps assess compliance context",
-//       },
-//       {
-//         question:
-//           "What specific claims are you making about your product or service?",
-//         reason: "Verifying accuracy and substantiation of advertising claims",
-//       },
-//       {
-//         question:
-//           "How do you ensure your advertising content meets industry standards?",
-//         reason: "Assessing advertiser's compliance awareness and processes",
-//       },
-//     ];
+      const fullPrompt = `${systemMessage}\n\n${prompt}`;
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      llmResponse = response.text();
+    } else {
+      // OpenAI API call
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
 
-//     // Add specific questions based on violations found
-//     Object.entries(modalityResults).forEach(([modality, result]) => {
-//       if (result.violations.length > 0) {
-//         fallbackQueries.push({
-//           question: `Can you provide more context about the ${modality} content in your advertisement?`,
-//           reason: `Clarification needed for potential ${modality} compliance issues`,
-//         });
-//       }
-//     });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemMessage },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: maxTokens,
+      });
 
-//     return fallbackQueries.slice(0, 5);
-//   }
-// };
+      llmResponse = completion.choices[0].message.content;
+    }
 
-// const callLLM = async (
-//   prompt,
-//   systemMessage = "You are a helpful AI assistant.",
-//   maxTokens = 1000
-// ) => {
-//   try {
-//     const isGemini = process.env.USE_GEMINI === "true";
-//     let llmResponse;
-
-//     if (isGemini) {
-//       // Gemini API call
-//       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-//       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-//       const fullPrompt = `${systemMessage}\n\n${prompt}`;
-//       const result = await model.generateContent(fullPrompt);
-//       const response = await result.response;
-//       llmResponse = response.text();
-//     } else {
-//       // OpenAI API call
-//       const openai = new OpenAI({
-//         apiKey: process.env.OPENAI_API_KEY,
-//       });
-
-//       const completion = await openai.chat.completions.create({
-//         model: "gpt-4o-mini",
-//         messages: [
-//           { role: "system", content: systemMessage },
-//           { role: "user", content: prompt },
-//         ],
-//         temperature: 0.3,
-//         max_tokens: maxTokens,
-//       });
-
-//       llmResponse = completion.choices[0].message.content;
-//     }
-
-//     // Clean response
-//     const cleanedResponse = llmResponse
-//       .replace(/```json\n?/g, "")
-//       .replace(/```\n?/g, "")
-//       .trim();
-//     return cleanedResponse;
-//   } catch (error) {
-//     console.error("Error calling LLM:", error);
-//     throw error;
-//   }
-// };
+    // Clean response
+    const cleanedResponse = llmResponse
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
+    return cleanedResponse;
+  } catch (error) {
+    console.error("Error calling LLM:", error);
+    throw error;
+  }
+};
 
 module.exports = {
   uploadAdvertisement,

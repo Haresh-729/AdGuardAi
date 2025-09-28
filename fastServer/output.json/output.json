@@ -1,0 +1,265 @@
+{
+  "text_op": {
+    "compliant": true,
+    "violations": [],
+    "risk_score": 0,
+    "summary": "The advertisement is compliant with the loaded policy documents.",
+    "processed_content": "Cadbury Advertisement Indulge in the creamy richness of Cadbury Dairy Milk—a velvety smooth chocolate made from the finest cocoa and fresh milk. Perfect for sharing or savoring solo, it melts in your ...",
+    "analysis_method": "groq_rag"
+  },
+  "image_op": {
+    "total_images": 1,
+    "analyzed_images": 1,
+    "results": [
+      {
+        "image_compliance": {
+          "compliant": true,
+          "violations": [],
+          "risk_score": 0.1,
+          "summary": "Legitimate consumer product advertisement - fully compliant with advertising policies",
+          "extracted_text": "For whom is Ajay sir happy? Cadbury Dairy Milk CHOCOLATE কুছ অচ্ছা হো জায়, কুছ মাছ হো জায়",
+          "visual_analysis": {
+            "scene_description": "The advertisement features a man smiling and posing in a celebratory setting with Cadbury Dairy Milk chocolate prominently displayed. The background suggests a festive or social gathering.",
+            "detected_objects": [
+              "Cadbury Dairy Milk chocolate bar",
+              "man smiling",
+              "celebratory background"
+            ],
+            "people_present": true,
+            "text_visible": true,
+            "content_category": "product_promotion/service_ad",
+            "promotional_intent": "promotion",
+            "campaign_type": "product_ad"
+          },
+          "safety_assessment": {
+            "adult_content_detected": false,
+            "violence_detected": false,
+            "inappropriate_content": false,
+            "child_safety_concern": false,
+            "safety_score": 0
+          },
+          "recommendations": [],
+          "analysis_method": "qwen2vl_api"
+        },
+        "source_url": "https://hzzblhkhtkmbyzbqoaxq.supabase.co/storage/v1/object/public/adguardai/2/8/cadbury.jpeg"
+      }
+    ]
+  },
+  "audio_op": null,
+  "link_op": {
+    "compliant": true,
+    "violations": [],
+    "risk_score": 0,
+    "summary": "URL analysis completed - compliant",
+    "url": "https://hareshkurade.tech",
+    "domain": "hareshkurade.tech",
+    "analysis_method": "url_pattern_analysis"
+  },
+  "video_op": {
+    "total_videos": 1,
+    "analyzed_videos": 1,
+    "results": [
+      {
+        "video_metadata": {
+          "total_frames": 725,
+          "fps": 30,
+          "width": 852,
+          "height": 480,
+          "duration_seconds": 24.166666666666668,
+          "codec": 875967080
+        },
+        "video_path": "C:\\Users\\Haresh\\AppData\\Local\\Temp\\tmp9dcu2iz7\\b4d7286b-e0fa-4997-a112-9c2d7f863294.mp4",
+        "processing_summary": {
+          "total_frames_analyzed": 3,
+          "sampling_strategy": "adaptive",
+          "max_frames_limit": 3,
+          "frames_processed": 3,
+          "processing_coverage": 0.004137931034482759,
+          "audio_analysis_included": true,
+          "audio_transcribed": false
+        },
+        "compliance_assessment": {
+          "video_compliant": true,
+          "compliance_score": 0.97,
+          "risk_score": 0.030000000000000027,
+          "visual_compliance_score": 1,
+          "audio_compliance_score": 0.9,
+          "compliant_frames": 3,
+          "non_compliant_frames": 0,
+          "compliance_percentage": 100,
+          "audio_compliant": true
+        },
+        "violation_summary": {
+          "total_violations": 1,
+          "visual_violations": 0,
+          "audio_violations": 1,
+          "critical_violations": 0,
+          "major_violations": 0,
+          "minor_violations": 1,
+          "violation_density": 0.3333333333333333,
+          "violation_timeline": [
+            {
+              "timestamp": 0,
+              "frame_number": -1,
+              "violation_type": "technical",
+              "severity": "minor",
+              "description": "Audio analysis failed: FFmpeg not found. Please install FFmpeg for audio analysis.",
+              "source": "audio"
+            }
+          ]
+        },
+        "detailed_frame_results": [
+          {
+            "image_compliance": {
+              "compliant": true,
+              "violations": [],
+              "risk_score": 0.1,
+              "summary": "Legitimate consumer product advertisement - fully compliant with advertising policies",
+              "extracted_text": "Cadbury Celebrations",
+              "visual_analysis": {
+                "scene_description": "A young boy is presenting a Cadbury Celebrations chocolate to a woman seated at a table. The setting appears to be a home environment with a warm and intimate atmosphere.",
+                "detected_objects": [
+                  "Cadbury Celebrations chocolate",
+                  "table",
+                  "chair",
+                  "woman",
+                  "boy"
+                ],
+                "people_present": true,
+                "text_visible": false,
+                "content_category": "product_promotion/service_ad",
+                "promotional_intent": "promotion",
+                "campaign_type": "product_ad"
+              },
+              "safety_assessment": {
+                "adult_content_detected": false,
+                "violence_detected": false,
+                "inappropriate_content": false,
+                "child_safety_concern": false,
+                "safety_score": 0
+              },
+              "recommendations": [],
+              "analysis_method": "qwen2vl_api"
+            },
+            "frame_number": 0,
+            "timestamp": 0,
+            "frame_position": 0
+          },
+          {
+            "image_compliance": {
+              "compliant": true,
+              "violations": [],
+              "risk_score": 0.1,
+              "summary": "Legitimate consumer product advertisement - fully compliant with advertising policies",
+              "extracted_text": "Cadbury Celebrations",
+              "visual_analysis": {
+                "scene_description": "A young boy is smiling and interacting with someone off-camera. The Cadbury Celebrations logo is visible in the top left corner.",
+                "detected_objects": [
+                  "boy",
+                  "adult",
+                  "Cadbury Celebrations logo"
+                ],
+                "people_present": true,
+                "text_visible": true,
+                "content_category": "product_promotion/service_ad",
+                "promotional_intent": "promotion",
+                "campaign_type": "product_ad"
+              },
+              "safety_assessment": {
+                "adult_content_detected": false,
+                "violence_detected": false,
+                "inappropriate_content": false,
+                "child_safety_concern": false,
+                "safety_score": 0
+              },
+              "recommendations": [],
+              "analysis_method": "qwen2vl_api"
+            },
+            "frame_number": 362,
+            "timestamp": 12.066666666666666,
+            "frame_position": 0.4993103448275862
+          },
+          {
+            "image_compliance": {
+              "compliant": true,
+              "violations": [],
+              "risk_score": 0.1,
+              "summary": "Legitimate consumer product advertisement - fully compliant with advertising policies",
+              "extracted_text": "Cadbury Celebrations\nइस रास्तवी कुछ अच्छा हो जाये कुछ मीठा हो जाये\nCadbury Celebrations\nPremium Selection",
+              "visual_analysis": {
+                "scene_description": "The advertisement features two Cadbury Celebrations chocolate boxes, one purple and one pink, with festive designs and text in Hindi. The background is blurred, suggesting a celebratory setting.",
+                "detected_objects": [
+                  "Cadbury Celebrations chocolate boxes"
+                ],
+                "people_present": false,
+                "text_visible": true,
+                "content_category": "product_promotion",
+                "promotional_intent": "promotion",
+                "campaign_type": "product_ad"
+              },
+              "safety_assessment": {
+                "adult_content_detected": false,
+                "violence_detected": false,
+                "inappropriate_content": false,
+                "child_safety_concern": false,
+                "safety_score": 0
+              },
+              "recommendations": [],
+              "analysis_method": "qwen2vl_api"
+            },
+            "frame_number": 724,
+            "timestamp": 24.133333333333333,
+            "frame_position": 0.9986206896551724
+          }
+        ],
+        "audio_analysis": {
+          "compliant": true,
+          "violations": [
+            {
+              "policy_section": "Audio Analysis",
+              "violation_type": "technical",
+              "description": "Audio analysis failed: FFmpeg not found. Please install FFmpeg for audio analysis.",
+              "confidence": 0.3,
+              "evidence": "Technical limitation",
+              "severity": "minor"
+            }
+          ],
+          "risk_score": 0.1,
+          "summary": "Audio analysis unavailable: FFmpeg not found. Please install FFmpeg for audio analysis.",
+          "transcribed_text": "",
+          "analysis_method": "error"
+        },
+        "analysis_timestamp": "2025-09-27T16:05:31.512212",
+        "processing_time": 206.28825283050537,
+        "source_url": "https://hzzblhkhtkmbyzbqoaxq.supabase.co/storage/v1/object/public/adguardai/2/8/chocolate.mp4"
+      }
+    ]
+  },
+  "processing_summary": {
+    "user_data": {
+      "name": "Haresh Kurade",
+      "email": "kuradeharesh4002@gmail.com",
+      "sector": "Dev",
+      "mobile": "9930112982"
+    },
+    "ad_details": {
+      "advertisement_id": 123,
+      "title": "Cadbury Advertisement",
+      "description": "Indulge in the creamy richness of Cadbury Dairy Milk—a velvety smooth chocolate made from the finest cocoa and fresh milk. Perfect for sharing or savoring solo, it melts in your mouth, delivering pure, delightful sweetness with every bite.",
+      "user_id": 2,
+      "type": 1,
+      "target_region": "Mumbai",
+      "language": "Hindi",
+      "landing_url": "https://hareshkurade.tech",
+      "target_audience": "General",
+      "target_age_group": {
+        "min": 5,
+        "max": 65
+      },
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z"
+    },
+    "total_items_processed": 4,
+    "processing_errors": []
+  }
+}

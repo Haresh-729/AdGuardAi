@@ -11,6 +11,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 from langdetect import detect
 import google.generativeai as genai
+from app.helpers.rate_limiter import rate_limited
 
 load_dotenv()
 
@@ -62,14 +63,16 @@ class PolicyComplianceChecker:
             policy_search_queries = [
                 f"What policies apply to this content: {ad_text[:150]}",
                 f"Policy violations and restrictions for: {ad_text[:100]}",
-                "prohibited content advertising restrictions",
-                "target audience guidelines compliance rules"
+                # "prohibited content advertising restrictions",
+                # "target audience guidelines compliance rules"
             ]
 
             relevant_sections = []
 
             for query in policy_search_queries:
                 try:
+                    import time
+                    time.sleep(1)
                     response = self.query_engine.query(query)
                     policy_text = str(response).strip()
 
@@ -183,11 +186,13 @@ RESPONSE REQUIREMENTS:
 
 Return ONLY the JSON response, no additional text."""
 
+    @rate_limited
     def analyze_with_groq(self, ad_text):
         prompt = self.create_groq_prompt(ad_text)
         response = self.query_engine.query(prompt)
         return self.parse_response(response, ad_text, "groq_rag")
 
+    @rate_limited
     def analyze_with_gemini_rag_enhanced(self, ad_text, detected_lang):
         try:
             print(f"Extracting relevant policy sections using RAG...")
@@ -298,7 +303,8 @@ Return ONLY the JSON response, no additional text."""
 
             if detected_lang == 'en':
                 print(f"Language: English -> Using Groq + RAG")
-                return self.analyze_with_groq(ad_text)
+                return self.analyze_with_gemini_rag_enhanced(ad_text, detected_lang)
+                # return self.analyze_with_groq(ad_text) #return afterwards
             else:
                 print(f"Language: {detected_lang} -> Using RAG-to-Gemini approach")
                 return self.analyze_with_gemini_rag_enhanced(ad_text, detected_lang)

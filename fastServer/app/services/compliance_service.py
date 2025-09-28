@@ -7,8 +7,11 @@ from app.helpers.image_compliance_checker import ImageComplianceChecker
 from app.helpers.audio_compliance_checker import AudioComplianceChecker
 from app.helpers.video_compliance_checker import VideoComplianceChecker
 from app.models.schemas import ComplianceCheckRequest
+from app.helpers.llm_client import call_llm_gemini
 import requests
 from urllib.parse import urlparse
+import json
+from datetime import datetime
 
 class ComplianceService:
     def __init__(self):
@@ -51,7 +54,7 @@ class ComplianceService:
             self.video_checker = VideoComplianceChecker(
                 image_checker=self.image_checker,
                 audio_checker=self.audio_checker,
-                max_frames_per_video=20,
+                max_frames_per_video=1,
                 sampling_strategy="adaptive",
                 include_audio_analysis=bool(self.audio_checker)
             )
@@ -337,6 +340,13 @@ class ComplianceService:
             
             # Extract text from ad_details
             ad_text = f"{request.ad_details.title} {request.ad_details.description}".strip()
+            if isinstance(request.ad_details.target_age_group, list):
+                if request.ad_details.target_age_group:
+                    min_age = min(request.ad_details.target_age_group)
+                    max_age = max(request.ad_details.target_age_group)
+                    request.ad_details.target_age_group = {"min": min_age, "max": max_age}
+                else:
+                    request.ad_details.target_age_group = {"min": 5, "max": 65}
             
             # Initialize results
             results = {
@@ -424,6 +434,53 @@ class ComplianceService:
             
             print(f"Comprehensive compliance analysis complete!")
             print(f"Total items processed: {items_processed}")
+
+            try:
+                # Extract modality results
+                modality_results = {
+                    "text": self.extract_modality_result(results.get("text_op")),
+                    "image": self.extract_modality_result(results.get("image_op", {}).get("results", [{}])[0] if results.get("image_op") else None),
+                    "audio": self.extract_modality_result(results.get("audio_op", {}).get("results", [{}])[0] if results.get("audio_op") else None),
+                    "video": self.extract_modality_result(results.get("video_op", {}).get("results", [{}])[0] if results.get("video_op") else None),
+                    "link": self.extract_modality_result(results.get("link_op"))
+                }
+                
+                # Call LLM for final analysis
+                llm_analysis = self.call_llm_for_compliance(results, modality_results)
+                
+                # Calculate risk score
+                risk_score = max(m["risk_score"] for m in modality_results.values())
+                
+                # Generate queries if clarification needed
+                queries_for_call = []
+                make_call = False
+                if llm_analysis["verdict"] == "clarification_needed":
+                    queries_for_call = self.generate_queries_for_call(results, modality_results)
+                    make_call = True
+                
+                # Add compliance results to response
+                results["compliance_results"] = {
+                    "advertisement_id": request.ad_details.advertisement_id,
+                    "verdict": llm_analysis["verdict"],
+                    "reason": llm_analysis["reason"], 
+                    "risk_score": llm_analysis.get("overall_risk_score", risk_score),
+                    "modalities": modality_results,
+                    "queries_for_call": queries_for_call,
+                    "make_call": make_call,
+                    "modalities_summary": llm_analysis.get("modalities_summary", {})
+                }
+                
+            except Exception as e:
+                print(f"LLM analysis failed: {e}")
+                results["compliance_results"] = {
+                    "advertisement_id": request.ad_details.advertisement_id,
+                    "verdict": "manual_review",
+                    "reason": "Error processing compliance results",
+                    "risk_score": 0.5,
+                    "modalities": {},
+                    "queries_for_call": [],
+                    "make_call": False
+                }
             
             # Cleanup downloaded files
             try:
@@ -447,3 +504,128 @@ class ComplianceService:
                     "error": str(e)
                 }
             }
+        
+
+    def extract_modality_result(self, modality_output):
+        if not modality_output:
+            return {
+                "compliant": True,
+                "violations": [],
+                "summary": "",
+                "risk_score": 0.0
+            }
+        
+        violations = modality_output.get('violations', [])
+        return {
+            "compliant": len(violations) == 0,
+            "violations": [
+                {
+                    "policy_section": v.get('policy_section', 'Unknown'),
+                    "violation": v.get('violation', ''),
+                    "confidence": v.get('confidence', 0.0),
+                    "evidence": v.get('evidence', '')
+                } for v in violations
+            ],
+            "summary": modality_output.get('summary', ''),
+            "risk_score": modality_output.get('risk_score', 0.0)
+        }
+
+    def call_llm_for_compliance(self, raw_output, modality_results):
+        prompt = f"""
+    You are an advertisement compliance expert. Analyze the following compliance check results and provide a final normalized decision JSON.
+
+    Raw Output: {json.dumps(raw_output, default=str, indent=2)}
+    Modality Results: {json.dumps(modality_results, default=str, indent=2)}
+
+    Respond ONLY with valid JSON in this exact format:
+    {{
+    "verdict": "pass" | "fail" | "manual_review" | "clarification_needed",
+    "reason": "One line summary explaining the decision",
+    "overall_risk_score": number,
+    "modalities_summary": {{
+        "text": "short human-readable summary of text modality (max 1 line)",
+        "image": "short human-readable summary of image modality",
+        "audio": "short human-readable summary of audio modality", 
+        "video": "short human-readable summary of video modality",
+        "link": "short human-readable summary of link modality"
+    }}
+    }}
+
+    Rules:
+    - If all modalities are compliant => verdict = "pass"
+    - If clear high-risk violations exist => verdict = "fail"
+    - If ambiguous edge cases => verdict = "clarification_needed"
+    - If errors or unusual inconsistencies => verdict = "manual_review"
+    """
+        
+        try:
+            response = call_llm_gemini(prompt, "You are an advertisement compliance expert. Always respond with valid JSON only.")
+            return json.loads(response)
+        except Exception as e:
+            print(f"LLM compliance analysis failed: {e}")
+            
+            # Fallback logic
+            has_violations = any(not m["compliant"] for m in modality_results.values())
+            max_risk = max(m["risk_score"] for m in modality_results.values())
+            
+            if not has_violations:
+                verdict = "pass"
+                reason = "All content complies with advertising policies"
+            elif max_risk > 0.7:
+                verdict = "fail" 
+                reason = "Significant policy violations detected"
+            else:
+                verdict = "manual_review"
+                reason = "Error in automated analysis - manual review required"
+                
+            return {
+                "verdict": verdict,
+                "reason": reason,
+                "overall_risk_score": max_risk,
+                "modalities_summary": {
+                    "text": "Analysis completed",
+                    "image": "Review completed", 
+                    "audio": "Processing finished",
+                    "video": "Analysis done",
+                    "link": "Check completed"
+                }
+            }
+
+    def generate_queries_for_call(self, raw_output, modality_results):
+        prompt = f"""
+    Generate 3-5 strategic questions for advertiser clarification call based on compliance analysis.
+
+    Modality Results: {json.dumps(modality_results, default=str, indent=2)}
+
+    Respond ONLY with valid JSON in this exact format:
+    [
+    {{
+        "question": "Specific question to ask the advertiser",
+        "reason": "Why this question is important for compliance assessment"
+    }}
+    ]
+
+    Requirements:
+    - Generate 3-5 questions maximum
+    - Questions should be professional and non-accusatory
+    - Focus on gathering context and intent
+    - Prioritize questions about the highest risk content found
+    """
+        
+        try:
+            response = call_llm_gemini(prompt, "You are an expert at conducting compliance clarification calls.", 800)
+            queries = json.loads(response)
+            return queries[:5]
+        except Exception as e:
+            print(f"Query generation failed: {e}")
+            return [
+                {
+                    "question": "Can you explain the main message and target audience for this advertisement?",
+                    "reason": "Understanding intent and audience helps assess compliance context"
+                },
+                {
+                    "question": "What specific claims are you making about your product or service?", 
+                    "reason": "Verifying accuracy and substantiation of advertising claims"
+                }
+            ]
+        

@@ -9,6 +9,7 @@ from app.models.schemas import (
 )
 from app.services.compliance_service import ComplianceService
 from typing import Dict, Any
+import os
 
 router = APIRouter()
 
@@ -106,3 +107,30 @@ async def health_check():
             "video_checker": compliance_service.video_checker is not None
         }
     }
+
+@router.post("/test-audio")
+async def test_audio_extraction(video_url: str):
+    """Test audio extraction from video URL"""
+    try:
+        from app.helpers.media_downloader import MediaDownloader
+        from app.helpers.video_compliance_checker import VideoComplianceChecker
+        
+        # Download video
+        downloader = MediaDownloader()
+        local_path = downloader.download_file(video_url, '.mp4')
+        
+        # Test extraction
+        checker = VideoComplianceChecker(include_audio_analysis=True)
+        audio_path = checker.extract_audio_from_video(local_path)
+        
+        return {
+            "success": True,
+            "audio_file": audio_path,
+            "file_size": os.path.getsize(audio_path)
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }

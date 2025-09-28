@@ -18,7 +18,7 @@ class AdDetails(BaseModel):
     language: str
     landing_url: str
     target_audience: str
-    target_age_group: Dict[str, Any]
+    target_age_group: Union[Dict[str, Any], List[int]] = {}
     created_at: datetime
     updated_at: datetime
 
