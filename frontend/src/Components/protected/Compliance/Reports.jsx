@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   FileText,
@@ -43,6 +43,7 @@ import {
   MediaAnalysisResults,
   ProcessingTimeline
 } from './utils/ReportHelper';
+import AdvancedDetailModal from './utils/AdvancedDetailModal';
 
 const Reports = () => {
   const user = useSelector(selectAccount);
@@ -239,9 +240,9 @@ const Reports = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6">
-      <div className="max-w-8xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className=" bg-[var(--card-bg)] rounded-2xl p-6 border border-[var(--border-color)]">
+        <div className="bg-[var(--card-bg)] rounded-2xl p-6 border border-[var(--border-color)]">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-r from-[var(--accent-color)] to-blue-600 rounded-xl flex items-center justify-center">
@@ -273,7 +274,7 @@ const Reports = () => {
         </div>
 
         {/* Filters */}
-        <div className="sticky top-20 bg-[var(--card-bg)] rounded-2xl p-6 border border-[var(--border-color)]">
+        <div className="bg-[var(--card-bg)] rounded-2xl p-6 border border-[var(--border-color)]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
@@ -401,7 +402,7 @@ const Reports = () => {
                     return (
                       <tr 
                         key={report.analysis_results_id}
-                        className="select-none hover:bg-[var(--highlight-color)]/10 transition-colors"
+                        className="hover:bg-[var(--highlight-color)]/10 transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-start space-x-3">
@@ -524,7 +525,7 @@ const Reports = () => {
 
         {/* Detail Modal */}
         {showDetailModal && selectedReport && (
-          <DetailModal 
+          <AdvancedDetailModal
             report={selectedReport}
             isAdmin={isAdmin}
             onClose={() => setShowDetailModal(false)}
@@ -542,213 +543,6 @@ const Reports = () => {
           />
         )}
       </div>
-    </div>
-  );
-};
-
-// Detail Modal Component
-const DetailModal = ({ report, isAdmin, onClose, onAdminAction }) => {
-  const formattedData = formatComplianceData(report);
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[var(--card-bg)] rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-[var(--border-color)]">
-        <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)]">
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">
-            Compliance Report Details
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-[var(--highlight-color)] flex items-center justify-center transition-colors"
-          >
-            <XCircle className="w-5 h-5 text-[var(--text-secondary)]" />
-          </button>
-        </div>
-        
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-          <ReportDetailContent report={report} formattedData={formattedData} isAdmin={isAdmin} onAdminAction={onAdminAction} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Report Detail Content Component
-const ReportDetailContent = ({ report, formattedData, isAdmin, onAdminAction }) => {
-  const complianceResult = report.compliance_result?.compliance_results;
-
-  return (
-    <div className="space-y-6">
-      {/* Basic Information */}
-      <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Advertisement Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)]">Title</label>
-            <p className="text-[var(--text-primary)] mt-1">{report.advertisement?.title || 'Untitled'}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)]">Created</label>
-            <p className="text-[var(--text-primary)] mt-1">{new Date(report.created_at).toLocaleString()}</p>
-          </div>
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium text-[var(--text-secondary)]">Description</label>
-            <p className="text-[var(--text-primary)] mt-1">{report.advertisement?.description || 'No description'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Compliance Summary */}
-      <ComplianceSummary formattedData={formattedData} />
-
-      {/* Media Assets */}
-      {formattedData.mediaTypes.length > 0 && (
-        <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Media Assets</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Render Images */}
-            {complianceResult?.image_op?.results?.map((result, index) => (
-              <div key={`image-${index}`} className="space-y-2">
-                <MediaPreview type="image" url={result.source_url} />
-                <div className="text-xs text-[var(--text-secondary)]">
-                  <p>Image {index + 1}</p>
-                  {result.image_compliance?.extracted_text && (
-                    <p className="mt-1">Text: "{result.image_compliance.extracted_text}"</p>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Render Videos */}
-            {complianceResult?.video_op?.results?.map((result, index) => (
-              <div key={`video-${index}`} className="space-y-2">
-                <MediaPreview type="video" url={result.source_url} />
-                <div className="text-xs text-[var(--text-secondary)]">
-                  <p>Video {index + 1}</p>
-                  {result.video_metadata && (
-                    <p className="mt-1">
-                      Duration: {Math.round(result.video_metadata.duration_seconds)}s |
-                      {result.video_metadata.width}x{result.video_metadata.height}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Render Landing Page */}
-            {complianceResult?.link_op && (
-              <div className="space-y-2">
-                <MediaPreview type="link" url={complianceResult.link_op.url} />
-                <div className="text-xs text-[var(--text-secondary)]">
-                  <p>Landing Page</p>
-                  <p className="mt-1">Domain: {complianceResult.link_op.domain}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Render Text Content */}
-            {complianceResult?.text_op && (
-              <div className="col-span-full">
-                <div className="bg-[var(--card-bg)] rounded-lg p-4 border border-[var(--border-color)]">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <FileText className="w-4 h-4 text-[var(--accent-color)]" />
-                    <span className="text-sm font-medium text-[var(--text-primary)]">Text Content</span>
-                  </div>
-                  <p className="text-sm text-[var(--text-primary)]">
-                    {complianceResult.text_op.processed_content || report.advertisement?.description}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Detailed Compliance Analysis */}
-      <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Compliance Analysis</h3>
-        <MediaAnalysisResults complianceResult={complianceResult} />
-      </div>
-
-      {/* Violations */}
-      {formattedData.violations.length > 0 && (
-        <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-            Violations Found ({formattedData.violations.length})
-          </h3>
-          <div className="space-y-4">
-            {formattedData.violations.map((violation, index) => (
-              <ViolationCard key={index} violation={violation} index={index} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Clarification Questions */}
-      {complianceResult?.compliance_results?.queries_for_call && (
-        <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-            Clarification Questions
-          </h3>
-          <div className="space-y-4">
-            {complianceResult.compliance_results.queries_for_call.map((query, index) => (
-              <div key={index} className="bg-[var(--card-bg)] rounded-lg p-4 border border-[var(--border-color)]">
-                <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">
-                  Question {index + 1}
-                </h4>
-                <p className="text-sm text-[var(--text-primary)] mb-2">{query.question}</p>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Reason: {query.reason}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Processing Timeline */}
-      {report.execution_time && (
-        <ProcessingTimeline executionTime={report.execution_time} />
-      )}
-
-      {/* Admin Actions */}
-      {isAdmin && !report.admin_verdict && (
-        <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Admin Actions</h3>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => onAdminAction('approve', report.analysis_results_id)}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span>Approve Advertisement</span>
-            </button>
-            <button
-              onClick={() => onAdminAction('reject', report.analysis_results_id)}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-            >
-              <XCircle className="w-4 h-4" />
-              <span>Reject Advertisement</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Raw Report Data (For Debugging - Admin Only) */}
-      {isAdmin && (
-        <div className="bg-[var(--bg-secondary)] rounded-xl p-6">
-          <details className="cursor-pointer">
-            <summary className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-              Raw Report Data (Debug)
-            </summary>
-            <div className="mt-4 bg-[var(--card-bg)] rounded-lg p-4 border border-[var(--border-color)]">
-              <pre className="text-xs text-[var(--text-primary)] overflow-auto max-h-96">
-                {JSON.stringify(report, null, 2)}
-              </pre>
-            </div>
-          </details>
-        </div>
-      )}
     </div>
   );
 };

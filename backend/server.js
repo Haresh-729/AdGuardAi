@@ -9,6 +9,8 @@ const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/account');
 const uploadRoutes = require('./routes/upload');
 const complianceRoutes = require('./routes/compliance');
+const dashboardRoutes = require('./routes/dashboard');
+const adminRoutes = require('./routes/admin');
 
 const keepAlive = require('./Services/keepAlive');
 
@@ -59,6 +61,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ads', complianceRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 
