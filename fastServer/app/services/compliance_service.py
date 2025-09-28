@@ -54,7 +54,7 @@ class ComplianceService:
             self.video_checker = VideoComplianceChecker(
                 image_checker=self.image_checker,
                 audio_checker=self.audio_checker,
-                max_frames_per_video=1,
+                max_frames_per_video=3,
                 sampling_strategy="adaptive",
                 include_audio_analysis=bool(self.audio_checker)
             )
@@ -536,11 +536,13 @@ class ComplianceService:
 
     Raw Output: {json.dumps(raw_output, default=str, indent=2)}
     Modality Results: {json.dumps(modality_results, default=str, indent=2)}
+    If you dont understand anything or if there are inconsistencies, flag for clarification_needed.
 
     Respond ONLY with valid JSON in this exact format:
     {{
     "verdict": "pass" | "fail" | "manual_review" | "clarification_needed",
     "reason": "One line summary explaining the decision",
+    "compatibility_score": number (10 to 100),
     "overall_risk_score": number,
     "modalities_summary": {{
         "text": "short human-readable summary of text modality (max 1 line)",
@@ -582,6 +584,7 @@ class ComplianceService:
                 "verdict": verdict,
                 "reason": reason,
                 "overall_risk_score": max_risk,
+                "compatibility_score": int((1 - max_risk) * 90) + 10,
                 "modalities_summary": {
                     "text": "Analysis completed",
                     "image": "Review completed", 
@@ -596,6 +599,7 @@ class ComplianceService:
     Generate 3-5 strategic questions for advertiser clarification call based on compliance analysis.
 
     Modality Results: {json.dumps(modality_results, default=str, indent=2)}
+    Raw Output From ML model: {json.dumps(raw_output, default=str, indent=2)}
 
     Respond ONLY with valid JSON in this exact format:
     [

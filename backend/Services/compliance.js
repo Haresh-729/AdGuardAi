@@ -36,23 +36,6 @@ const uploadAdvertisement = async (adData, files) => {
 
     const advertisementId = advertisement.advertisement_id;
 
-    // Sequential processing - await the entire flow
-    await asyncProcessExecutor(advertisementId, adData, files);
-
-    return { advertisement_id: advertisementId };
-  } catch (error) {
-    console.error("Error in uploadAdvertisement:", error);
-    throw new Error(error.message || "Failed to upload advertisement");
-  }
-};
-
-const asyncProcessExecutor = async (advertisementId, adData, files) => {
-  try {
-    if (!adData.user_id || !advertisementId) {
-      throw new Error("Missing required advertisement data");
-    }
-
-    // 2. Create Analysis Result Entry
     const { data: analysisResultsData, error: analysisError } = await supabase
       .from(analysisResultsTable)
       .insert([
@@ -63,13 +46,37 @@ const asyncProcessExecutor = async (advertisementId, adData, files) => {
           execution_time: { upload_started: new Date().toISOString() },
         },
       ])
-      .select("analysis_results_id");
+      .select("analysis_results_id")
+      .single();
 
-    const analysisResultsId = analysisResultsData
-      ? analysisResultsData[0].analysis_results_id
-      : null;
+    if (analysisError) {
+      // If analysis entry fails, cleanup advertisement entry
+      await supabase
+        .from(advertisementTable)
+        .delete()
+        .eq("advertisement_id", advertisementId);
+      throw analysisError;
+    }
 
-    if (analysisError) throw analysisError;
+    const analysisResultsId = analysisResultsData.analysis_results_id;
+
+    // Fire and forget the async processing
+    await asyncProcessExecutor(advertisementId, adData, files, analysisResultsId).catch(error => {
+      console.error("Unhandled error in asyncProcessExecutor:", error);
+    });
+
+    return { advertisement_id: advertisementId };
+  } catch (error) {
+    console.error("Error in uploadAdvertisement:", error);
+    throw new Error(error.message || "Failed to upload advertisement");
+  }
+};
+
+const asyncProcessExecutor = async (advertisementId, adData, files, analysisResultsId) => {
+  try {
+    if (!adData.user_id || !advertisementId) {
+      throw new Error("Missing required advertisement data");
+    }
 
     // 3. Upload Media Files to Supabase Storage
     const mediaUrls = await uploadMediaToSupabase(
@@ -391,25 +398,51 @@ const triggerComplianceCheck = async (
       }
     );
 
-    return response.data;
+    const fastApiOutput = response.data;
+
+    // SAVE FASTAPI RESPONSE IMMEDIATELY
+    await supabase
+      .from(analysisResultsTable)
+      .update({
+        compliance_result: fastApiOutput,
+        call_required: fastApiOutput.compliance_results?.make_call || false,
+        status: 1, // compliance completed
+        execution_time: { 
+          compliance_completed: new Date().toISOString() 
+        }
+      })
+      .eq("advertisement_id", advertisementId);
+
+    return fastApiOutput;
+
   } catch (error) {
     console.error("FastAPI compliance check failed:", error);
-    // Return error format that handleComplianceResult can process
-    return {
+    
+    // Save error in compliance_result
+    const errorResult = {
       error: true,
       message: "Compliance service error",
-      text_op: null,
-      image_op: null,
-      audio_op: null,
-      video_op: null,
-      link_op: null,
+      timestamp: new Date().toISOString()
     };
+
+    await supabase
+      .from(analysisResultsTable)
+      .update({
+        compliance_result: errorResult,
+        call_required: false,
+        status: 1,
+        verdict: "manual_review",
+        reason: "Compliance service error"
+      })
+      .eq("advertisement_id", advertisementId);
+
+    return errorResult;
   }
 };
 
 const handleComplianceResult = async (rawOutput, advertisementId) => {
   try {
-    // Handle error case from FastAPI
+    // Since we already saved rawOutput in triggerComplianceCheck, just process it
     if (rawOutput.error) {
       return {
         raw_output: rawOutput,
@@ -417,73 +450,40 @@ const handleComplianceResult = async (rawOutput, advertisementId) => {
           advertisement_id: advertisementId,
           verdict: "manual_review",
           reason: rawOutput.message || "Compliance service error",
-          risk_score: 0.5,
-          modalities: {},
-          queries_for_call: [],
+          make_call: false,
         },
       };
     }
+
     if (rawOutput.compliance_results) {
       return {
         raw_output: rawOutput,
         compliance_results: {
           ...rawOutput.compliance_results,
-          advertisement_id: advertisementId, // Ensure advertisement_id is set
+          advertisement_id: advertisementId,
         },
       };
     }
 
-    // FALLBACK: Old logic for backward compatibility
-    const modalityResults = {
-      text: extractModalityResult(rawOutput.text_op),
-      image: extractModalityResult(rawOutput.image_op),
-      audio: extractModalityResult(rawOutput.audio_op),
-      video: extractModalityResult(rawOutput.video_op),
-      link: extractModalityResult(rawOutput.link_op),
-    };
-    // // 2. Call LLM for final decision
-    // const llmAnalysis = await callLLMForCompliance(rawOutput, modalityResults);
-
-    // 3. Aggregate risk score (max of all modality risk scores)
-    const riskScore = Math.max(
-      modalityResults.text.risk_score,
-      modalityResults.image.risk_score,
-      modalityResults.audio.risk_score,
-      modalityResults.video.risk_score,
-      modalityResults.link.risk_score
-    );
-
-    // 4. Generate queries for call if clarification needed
-    // let queriesForCall = [];
-    // if (llmAnalysis.verdict === "clarification_needed") {
-    //   queriesForCall = await generateQueriesForCall(rawOutput, modalityResults);
-    // }
-
-    // 5. Return structured result
+    // Fallback for old format
     return {
       raw_output: rawOutput,
       compliance_results: {
         advertisement_id: advertisementId,
-        verdict: llmAnalysis.verdict,
-        reason: llmAnalysis.reason,
-        risk_score: llmAnalysis.overall_risk_score || riskScore,
-        modalities: modalityResults,
-        queries_for_call: queriesForCall,
+        verdict: "manual_review",
+        reason: "Invalid response format",
+        make_call: false,
       },
     };
   } catch (error) {
     console.error("Error in handleComplianceResult:", error);
-
-    // Return error format
     return {
       raw_output: rawOutput,
       compliance_results: {
         advertisement_id: advertisementId,
         verdict: "manual_review",
         reason: "Error processing compliance results",
-        risk_score: 0.5,
-        modalities: {},
-        queries_for_call: [],
+        make_call: false,
       },
     };
   }

@@ -11,7 +11,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 from langdetect import detect
 import google.generativeai as genai
-from app.helpers.rate_limiter import rate_limited
+from app.helpers.api_key_pool import groq_pool
+import time
 
 load_dotenv()
 
@@ -20,24 +21,31 @@ class PolicyComplianceChecker:
         self.policy_file = policy_file
         
         # Get API keys from environment variables
-        self.groq_api_key = os.getenv('GROQ_API_KEY')
         self.gemini_api_key = os.getenv('GEMINI_API_KEY')
         
         self.index = None
         self.query_engine = None
         self.policy_content = ""
-
-        if not self.groq_api_key:
-            raise Exception("GROQ_API_KEY not found in environment")
         if not self.gemini_api_key:
             raise Exception("GEMINI_API_KEY not found in environment")
 
         genai.configure(api_key=self.gemini_api_key)
         self.gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
+    def _get_fresh_groq_key(self):
+        """Get a fresh API key and recreate client"""
+        key = groq_pool.get_key_with_retry()
+        if key:
+            groq_api_key = key
+            # Update Settings for llamaindex
+            from llama_index.llms.groq import Groq
+            Settings.llm = Groq(model="llama-3.1-8b-instant", api_key=groq_api_key)
+        return key
+    
     def setup_models(self):
+        key = groq_pool.get_key_with_retry()
         embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        llm = Groq(model="llama-3.1-8b-instant", api_key=self.groq_api_key)
+        llm = Groq(model="llama-3.1-8b-instant", api_key=key)
 
         Settings.embed_model = embed_model
         Settings.llm = llm
@@ -186,30 +194,55 @@ RESPONSE REQUIREMENTS:
 
 Return ONLY the JSON response, no additional text."""
 
-    @rate_limited
     def analyze_with_groq(self, ad_text):
-        prompt = self.create_groq_prompt(ad_text)
-        response = self.query_engine.query(prompt)
-        return self.parse_response(response, ad_text, "groq_rag")
+        for attempt in range(len(groq_pool.keys)):
+            try:
+                prompt = self.create_groq_prompt(ad_text)
+                response = self.query_engine.query(prompt)
+                return self.parse_response(response, ad_text, "groq_rag")
+            except Exception as e:
+                if "429" in str(e):
+                    key = groq_pool.get_key_with_retry()
+                    groq_pool.mark_rate_limited(key)
+                    if not self._get_fresh_groq_key():
+                        time.sleep(10)  # Wait if all keys exhausted
+                        continue
+                else:
+                    raise e
+        raise Exception("All Groq keys exhausted")
 
-    @rate_limited
     def analyze_with_gemini_rag_enhanced(self, ad_text, detected_lang):
         try:
-            print(f"Extracting relevant policy sections using RAG...")
-            relevant_policy_sections = self.extract_relevant_policy_sections(ad_text)
-
-            print(f"Analyzing with Gemini using extracted policy sections...")
+            # Handle Groq API for policy sections with key rotation
+            relevant_policy_sections = None
+            for attempt in range(len(groq_pool.keys)):
+                try:
+                    relevant_policy_sections = self.extract_relevant_policy_sections(ad_text)
+                    break  # Success, exit loop
+                except Exception as e:
+                    if "429" in str(e):
+                        key = groq_pool.get_key_with_retry()
+                        groq_pool.mark_rate_limited(key)
+                        if not self._get_fresh_groq_key():
+                            time.sleep(10)
+                            continue
+                    else:
+                        raise e
+            
+            if not relevant_policy_sections:
+                raise Exception("Failed to extract policy sections")
+            
+            # Gemini call (no key rotation needed)
             prompt = self.create_gemini_prompt_with_rag_sections(ad_text, detected_lang, relevant_policy_sections)
             response = self.gemini_model.generate_content(prompt)
-
             return self.parse_gemini_response(response.text, ad_text, detected_lang)
-
+            
         except Exception as e:
             print(f"RAG-to-Gemini analysis error: {e}")
             return {
                 "compliant": False,
                 "violations": [{
-                    "policy_section": "System Error",
+                    "policy_section": "System Error", 
                     "violation": f"RAG-to-Gemini analysis failed: {str(e)}",
                     "confidence": 0.5,
                     "evidence": ad_text[:100]
@@ -303,8 +336,8 @@ Return ONLY the JSON response, no additional text."""
 
             if detected_lang == 'en':
                 print(f"Language: English -> Using Groq + RAG")
-                return self.analyze_with_gemini_rag_enhanced(ad_text, detected_lang)
-                # return self.analyze_with_groq(ad_text) #return afterwards
+                # return self.analyze_with_gemini_rag_enhanced(ad_text, detected_lang)
+                return self.analyze_with_groq(ad_text) #return afterwards
             else:
                 print(f"Language: {detected_lang} -> Using RAG-to-Gemini approach")
                 return self.analyze_with_gemini_rag_enhanced(ad_text, detected_lang)

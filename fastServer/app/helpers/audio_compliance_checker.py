@@ -2,10 +2,12 @@ import os
 import json
 from typing import Dict, Any
 import requests
+from app.helpers.api_key_pool import groq_pool
+import time
 
 class AudioComplianceChecker:
     def __init__(self, policy_checker, groq_api_key=None):
-        self.groq_api_key = groq_api_key or os.getenv('GROQ_API_KEY')
+        self.groq_api_key = groq_pool.get_key_with_retry()
         self.policy_checker = policy_checker
         self.supported_formats = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.webm', '.mp4', '.avi', '.mov']
         
@@ -19,6 +21,14 @@ class AudioComplianceChecker:
         except ImportError:
             raise Exception("groq package not installed. Run: pip install groq")
     
+    def _get_fresh_groq_key(self):
+        key = groq_pool.get_key_with_retry()
+        if key:
+            self.groq_api_key = key
+            import groq as groq_sdk
+            self.client = groq_sdk.Groq(api_key=key)
+        return key
+    
     def validate_audio_file(self, audio_path):
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
@@ -30,25 +40,26 @@ class AudioComplianceChecker:
     def transcribe_audio(self, audio_path):
         self.validate_audio_file(audio_path)
         
-        try:
-            print(f"Transcribing audio: {os.path.basename(audio_path)}")
-            
-            with open(audio_path, "rb") as file:
-                transcription = self.client.audio.transcriptions.create(
-                    file=file,
-                    model="whisper-large-v3",
-                    response_format="text",
-                    language="en"
-                )
-            
-            transcribed_text = transcription.strip() if transcription else ""
-            print(f"Audio transcribed: {len(transcribed_text)} characters")
-            
-            return transcribed_text
-            
-        except Exception as e:
-            print(f"Transcription failed: {e}")
-            raise Exception(f"Transcription failed: {str(e)}")
+        for attempt in range(len(groq_pool.keys)):
+            try:
+                with open(audio_path, "rb") as file:
+                    transcription = self.client.audio.transcriptions.create(
+                        file=file,
+                        model="whisper-large-v3",
+                        response_format="text",
+                        language="en"
+                    )
+                return transcription.strip() if transcription else ""
+            except Exception as e:
+                if "429" in str(e):
+                    groq_pool.mark_rate_limited(self.groq_api_key)
+                    if not self._get_fresh_groq_key():
+                        time.sleep(5)
+                        continue
+                else:
+                    raise Exception(f"Transcription failed: {str(e)}")
+        
+        raise Exception("All Groq keys exhausted")
     
     def check_audio_compliance(self, audio_path):
         try:

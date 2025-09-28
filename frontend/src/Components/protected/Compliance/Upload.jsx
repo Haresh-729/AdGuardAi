@@ -131,9 +131,9 @@ const Upload = () => {
       setShowProgressModal(true);
       
       // Start polling
-      pollAdStatus(response.advertisement_id, (status) => {
-        setProgressData(status);
-      });
+    //   pollAdStatus(response.advertisement_id, (status) => {
+    //     setProgressData(status);
+    //   });
       
     } catch (error) {
       console.error('Upload failed:', error);
