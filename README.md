@@ -9,6 +9,37 @@ Digital advertising platforms face a major challenge in ensuring that ads comply
 
 Our product, the **Instant Ad Compliance Checker**, solves this problem by providing advertisers with an AI-powered tool that pre-screens ad content before submission. By detecting potential violations early, advertisers can make corrections instantly, reducing back-and-forth cycles and accelerating the approval process.
 
+## Final Presentation: [Click to View](https://drive.google.com/file/d/11PLAIdZAwCfGe1GXKF6HxNX1TtLqxI5-/view?usp=sharing)
+## Final Product Demo: https://adguardai.hareshkurade.xyz
+## Greatest USP: 
+Accuracy Tested and Tried on All types of Advertisements especially False Positive, False Negative our entire project performs good in all scenarios…. And by reinforcement learning it will be more strong….
+## Video Demo: [Click to View](https://drive.google.com/drive/folders/1qaBm-bgqLn_litZntQw4WmqbJbk3Ttv0?usp=sharing)
+## Postman Link: [Click to View APIs](https://git-win-it.postman.co/workspace/Git-win-it~fc879010-f344-4714-a946-b852dd9f177a/request/25138459-73c86719-53fc-4097-8a38-2e09416f202c?action=share&creator=25138459&ctx=documentation)
+</br>
+## Example False Negative.
+<img width="1919" height="1079" alt="Screenshot 2025-09-29 002703" src="https://github.com/user-attachments/assets/812d5e95-794b-43c2-abda-e63f3eeb80bd" />
+<img width="1682" height="838" alt="image" src="https://github.com/user-attachments/assets/296d4a2d-0ef2-4e93-a801-69c2839e5acd" />
+
+## Example. Complianced and had few doubts with 60% confidence of valid content but After reverification with the user on call final Verict from AI was Fail.
+### Reasons: 
+         User fumbuled during the call.
+         User took too long to reply.
+         User was not confident during the call.
+## Recording of the Call: [fumbulled call.mp3](https://github.com/user-attachments/files/22584828/fumbulled.call.mp3)
+
+Some Snapshots:
+<img width="1919" height="1037" alt="image" src="https://github.com/user-attachments/assets/f4a3dae7-84cf-4f7a-9dca-4c86beee7e62" />
+<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/6ac39ae1-9349-4922-ab29-0091cc15192d" />
+<img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/d5474511-88f4-49ce-b7a2-69fb841433b8" />
+<img width="1919" height="1025" alt="image" src="https://github.com/user-attachments/assets/bd229a59-9a3c-4a25-8f3b-3e82d84b0c78" />
+<img width="1000" height="992" alt="image" src="https://github.com/user-attachments/assets/d50c073b-f6af-4411-98a7-8676b1ccf995" />
+<img width="1919" height="1032" alt="image" src="https://github.com/user-attachments/assets/82a97df9-a555-4521-8124-58a83d6ab8df" />
+
+
+
+
+
+
 ## ✨ Key Features
 
 The tool's value lies in its **multimodal AI approach**:
